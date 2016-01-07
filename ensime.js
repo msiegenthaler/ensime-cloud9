@@ -1,7 +1,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "language", "ui", "commands", "menus", "preferences",
-        "settings", "proc", "fs", "jsonalyzer"
+        "settings", "proc", "fs", "net", "jsonalyzer"
     ];
     main.provides = ["ensime"];
     return main;
@@ -16,13 +16,15 @@ define(function(require, exports, module) {
         var prefs = imports.preferences;
         var proc = imports.proc;
         var fs = imports.fs;
+        var net = imports.net;
         var jsonalyzer = imports.jsonalyzer;
         var launchCommand = require("text!./server/start-server.sh");
 
         /***** Initialization *****/
 
-        var ensimeRunning = false;
+        var ensimeRunning = true; //TODO temporary
         var ensimeProcess;
+        var ensimePort = 33023;
 
         /** Plugin **/
 
@@ -78,15 +80,16 @@ define(function(require, exports, module) {
             }, plugin);
         }
 
+
         /***** Lifecycle *****/
 
         plugin.on("load", function() {
             loadSettings();
-            jsonalyzer.registerWorkerHandler("plugins/ensime.language.scala/worker/scala_jsonalyzer");
             language.registerLanguageHandler("plugins/ensime.language.scala/worker/scala_completer", function(err, handler) {
                 if (err) return console.error(err);
                 setupHandler(handler);
             });
+            jsonalyzer.registerWorkerHandler("plugins/ensime.language.scala/worker/scala_jsonalyzer");
         });
         plugin.on("unload", function() {
             ensimeRunning = false;
@@ -98,6 +101,9 @@ define(function(require, exports, module) {
         function setupHandler(handler) {
             settings.on("project/ensime", sendSettings.bind(null, handler), plugin);
             sendSettings(handler);
+            handler.on("callEnsime", function(event) {
+                callEnsime(event, handler);
+            });
         }
 
         function sendSettings(handler) {
@@ -132,18 +138,65 @@ define(function(require, exports, module) {
                             if (l.length > 0) console.log("ENSIME: " + l);
                         });
                     });
+
                     process.on("exit", function(code) {
                         console.log("Ensime server stopped");
-                        ensimeRunning = false;
+                        emit("ensimeStopped", "Exited with code: " + code);
                     });
                 });
             });
         }
 
+        plugin.on("ensimeStopped", function() {
+            ensimeRunning = false;
+            ensimeProcess = undefined;
+        });
+
+
         function stopEnsime() {
             if (!ensimeRunning) return console.log("Ensime is not running.");
             ensimeProcess.kill(9);
             console.log("Ensime process killed by stopEnsime().");
+        }
+
+
+        function callEnsime(data, worker) {
+            function fail(reason) {
+                worker.emit("callEnsime.result", {
+                    to: data.id,
+                    err: reason
+                });
+            }
+
+            function success(result) {
+                worker.emit("callEnsime.result", {
+                    to: data.id,
+                    result: result
+                });
+            }
+            if (!ensimeRunning)
+                return fail("ensime-server not running");
+
+            console.log("Data = ");
+            console.log(data);
+            console.log("Calling ensime-server on " + ensimePort + " with for request " + data.id + ": ");
+            console.log(data.request);
+            net.connect(ensimePort, {
+                retries: 3
+            }, function(err, stream) {
+                if (err) return fail("Could not connect to ensime.");
+                stream.write("POST /rpc HTTP/1.1\n");
+                stream.write("Host: localhost\n");
+                stream.write(JSON.stringify(data.request));
+                stream.write("\n\n");
+
+                //TODO error handling...
+                stream.on("data", function(chunk) {
+                    console.log("Ensime answered: ");
+                    console.log(chunk);
+                    success({});
+                });
+            });
         }
 
         /**
