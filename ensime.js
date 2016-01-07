@@ -177,24 +177,31 @@ define(function(require, exports, module) {
             if (!ensimeRunning)
                 return fail("ensime-server not running");
 
-            console.log("Data = ");
-            console.log(data);
-            console.log("Calling ensime-server on " + ensimePort + " with for request " + data.id + ": ");
-            console.log(data.request);
             net.connect(ensimePort, {
                 retries: 3
             }, function(err, stream) {
                 if (err) return fail("Could not connect to ensime.");
-                stream.write("POST /rpc HTTP/1.1\n");
-                stream.write("Host: localhost\n");
-                stream.write(JSON.stringify(data.request));
-                stream.write("\n\n");
+                var json = JSON.stringify(data.request);
+                stream.write("POST /rpc HTTP/1.0\r\n");
+                stream.write("Host: localhost\r\n");
+                stream.write("Content-Type: application/json\r\n");
+                stream.write("Content-Length: " + json.length + "\r\n"); //TODO better use an array (2-char values..)
+                stream.write("\r\n");
+                stream.write(json);
+                stream.write("\r\n\r\n");
 
                 //TODO error handling...
+                var revc = "";
                 stream.on("data", function(chunk) {
+                    revc = revc + chunk;
+                });
+                stream.on("end", function() {
                     console.log("Ensime answered: ");
-                    console.log(chunk);
+                    console.log(revc);
                     success({});
+                });
+                stream.on("error", function() {
+                    fail("Error reading from ensime-server");
                 });
             });
         }

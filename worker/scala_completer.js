@@ -47,7 +47,6 @@ define(function(require, exports, module) {
       callback(event.err, event.response);
     });
 
-    console.log("Sending to plugin.");
     emitter.emit("callEnsime", {
       id: reqId,
       request: req
