@@ -10,35 +10,34 @@ define(function(require, exports, module) {
 
   // taken from https://github.com/ceedubs/sbt-ctags
   var TAGS = [{
-    regex: /(?:^|\n)[ \t]*(?:(?:abstract|final|sealed|implicit|lazy)[ \t]*)*(?:private|protected)?[ \t]*object[ \t]+([a-zA-Z0-9_]+)/g,
-    kind: "objects"
+    regex: /(?:^|\n)[ \t]*(?:private|protected)?[ \t]*(?:(?:package|abstract|final|sealed|implicit|lazy)[ \t]*)*(?:private|protected)?[ \t]*object[ \t]+([a-zA-Z0-9_]+)/g,
+    kind: "objects",
   }, {
-    regex: /(?:^|\n)[ \t]*(?:(?:abstract|final|sealed|implicit|lazy)[ \t]*)*(?:private|protected)?[ \t]*case object[ \t]+([a-zA-Z0-9_]+)/g,
-    kind: "case objects"
+    regex: /(?:^|\n)[ \t]*(?:private|protected)?[ \t]*(?:(?:abstract|final|sealed|implicit|lazy)[ \t]*)*(?:private|protected)?[ \t]*case object[ \t]+([a-zA-Z0-9_]+)/g,
+    kind: "case objects",
   }, {
-    regex: /(?:^|\n)[ \t]*(?:(?:abstract|final|sealed|implicit|lazy)[ \t]*)*(?:private|protected)?[ \t]*class[ \t]+([a-zA-Z0-9_]+)/g,
-    kind: "classes"
+    regex: /(?:^|\n)[ \t]*(?:private|protected)?[ \t]*(?:(?:abstract|final|sealed|implicit|lazy)[ \t]*)*(?:private|protected)?[ \t]*class[ \t]+([a-zA-Z0-9_]+)/g,
+    kind: "classes",
   }, {
-    regex: /(?:^|\n)[ \t]*(?:(?:abstract|final|sealed|implicit|lazy)[ \t]*)*(?:private|protected)?[ \t]*case class[ \t]+([a-zA-Z0-9_]+)/g,
-    kind: "case classes"
+    regex: /(?:^|\n)[ \t]*(?:private|protected)?[ \t]*(?:(?:abstract|final|sealed|implicit|lazy)[ \t]*)*(?:private|protected)?[ \t]*case class[ \t]+([a-zA-Z0-9_]+)/g,
+    kind: "case classes",
   }, {
-    regex: /(?:^|\n)[ \t]*(?:(?:abstract|final|sealed|implicit|lazy)[ \t]*)*(?:private|protected)?[ \t]*trait[ \t]+([a-zA-Z0-9_]+)/g,
+    regex: /(?:^|\n)[ \t]*(?:private|protected)?[ \t]*(?:(?:abstract|final|sealed|implicit|lazy)[ \t]*)*(?:private|protected)?[ \t]*trait[ \t]+([a-zA-Z0-9_]+)/g,
     kind: "trait",
-    indent: 1
   }, {
-    regex: /(?:^|\n)[ \t]*type[ \t]+([a-zA-Z0-9_]+)/g,
+    regex: /(?:^|\n)[ \t]*(?:private|protected)?[ \t]*type[ \t]+([a-zA-Z0-9_]+)/g,
     kind: "types",
     indent: 1
   }, {
-    regex: /(?:^|\n)[ \t]*(?:(?:abstract|final|sealed|implicit|lazy)[ \t]*)*def[ \t]+([a-zA-Z0-9_]+)/g,
+    regex: /(?:^|\n)[ \t]*(?:private|protected)?[ \t]*(?:(?:abstract|final|sealed|implicit|lazy)[ \t]*)*def[ \t]+([a-zA-Z0-9_]+)/g,
     kind: "methods",
     indent: 1
   }, {
-    regex: /(?:^|\n)[ \t]*(?:(?:abstract|final|sealed|implicit|lazy)[ \t]*)*val[ \t]+([a-zA-Z0-9_]+)/g,
+    regex: /(?:^|\n)[ \t]*(?:private|protected)?[ \t]*(?:(?:abstract|final|sealed|implicit|lazy)[ \t]*)*val[ \t]+([a-zA-Z0-9_]+)/g,
     kind: "constants",
     indent: 1
   }, {
-    regex: /(?:^|\n)[ \t]*(?:(?:abstract|final|sealed|implicit|lazy)[ \t]*)*var[ \t]+([a-zA-Z0-9_]+)/g,
+    regex: /(?:^|\n)[ \t]*(?:private|protected)?[ \t]*(?:(?:abstract|final|sealed|implicit|lazy)[ \t]*)*var[ \t]+([a-zA-Z0-9_]+)/g,
     kind: "variables",
     indent: 1
   }, {
