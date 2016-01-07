@@ -1,6 +1,7 @@
 define(function(require, exports, module) {
     main.consumes = [
-        "Plugin", "language", "ui", "commands", "menus", "preferences", "settings", "proc", "fs"
+        "Plugin", "language", "ui", "commands", "menus", "preferences",
+        "settings", "proc", "fs", "jsonalyzer"
     ];
     main.provides = ["ensime"];
     return main;
@@ -15,6 +16,7 @@ define(function(require, exports, module) {
         var prefs = imports.preferences;
         var proc = imports.proc;
         var fs = imports.fs;
+        var jsonalyzer = imports.jsonalyzer;
         var launchCommand = require("text!./server/start-server.sh");
 
         /***** Initialization *****/
@@ -27,7 +29,7 @@ define(function(require, exports, module) {
         var plugin = new Plugin("Ensime", main.consumes);
         var emit = plugin.getEmitter();
 
-        function load() {
+        function loadSettings() {
             commands.addCommand({
                 name: "startEnsime",
                 isAvailable: function() {
@@ -79,7 +81,8 @@ define(function(require, exports, module) {
         /***** Lifecycle *****/
 
         plugin.on("load", function() {
-            load();
+            loadSettings();
+            jsonalyzer.registerWorkerHandler("plugins/ensime.language.scala/worker/scala_jsonalyzer");
             language.registerLanguageHandler("plugins/ensime.language.scala/worker/scala_completer", function(err, handler) {
                 if (err) return console.error(err);
                 setupHandler(handler);
@@ -89,6 +92,7 @@ define(function(require, exports, module) {
             ensimeRunning = false;
             ensimeProcess = undefined;
             language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/scala_completer");
+            jsonalyzer.unregisterWorkerHandler("plugins/ensime.language.scala/worker/scala_jsonalyzer");
         });
 
         function setupHandler(handler) {
