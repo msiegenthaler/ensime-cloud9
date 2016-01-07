@@ -1,12 +1,13 @@
 define(function(require, exports, module) {
     main.consumes = [
-        "Plugin", "ui", "commands", "menus", "preferences", "settings", "proc", "fs"
+        "Plugin", "language", "ui", "commands", "menus", "preferences", "settings", "proc", "fs"
     ];
     main.provides = ["ensime"];
     return main;
 
     function main(options, imports, register) {
         var Plugin = imports.Plugin;
+        var language = imports.language;
         var ui = imports.ui;
         var menus = imports.menus;
         var commands = imports.commands;
@@ -14,15 +15,16 @@ define(function(require, exports, module) {
         var prefs = imports.preferences;
         var proc = imports.proc;
         var fs = imports.fs;
+        var launchCommand = require("text!./server/start-server.sh");
 
         /***** Initialization *****/
 
         var ensimeRunning = false;
         var ensimeProcess;
 
+        /** Plugin **/
 
         var plugin = new Plugin("Ensime", main.consumes);
-        var launchCommand = require("text!./server/start-server.sh").replace(/ {4}/g, " ");
         var emit = plugin.getEmitter();
 
         function load() {
@@ -46,15 +48,15 @@ define(function(require, exports, module) {
                 }
             }, plugin);
 
-            menus.addItemByPath("Run/Start Ensime Server", new ui.item({
+            menus.addItemByPath("Run/Start Ensime", new ui.item({
                 command: "startEnsime"
-            }), 10550-10500, plugin);
-            menus.addItemByPath("Run/Stop Ensime Server", new ui.item({
+            }), 10550, plugin);
+            menus.addItemByPath("Run/Stop Ensime", new ui.item({
                 command: "stopEnsime"
-            }), 10551-10500, plugin);
+            }), 10551, plugin);
 
             settings.on("read", function(e) {
-                settings.setDefaults("user/ensime", [
+                settings.setDefaults("project/ensime", [
                     ["ensimeFile", "~/workspace/.ensime"]
                 ]);
             });
@@ -66,7 +68,7 @@ define(function(require, exports, module) {
                         position: 100,
                         ".ensime Location": {
                             type: "textbox",
-                            setting: "user/ensime/@ensimeFile",
+                            setting: "project/ensime/@ensimeFile",
                             position: 100
                         }
                     }
@@ -78,23 +80,39 @@ define(function(require, exports, module) {
 
         plugin.on("load", function() {
             load();
+            language.registerLanguageHandler("plugins/ensime.language.scala/worker/scala_completer", function(err, handler) {
+                if (err) return console.error(err);
+                setupHandler(handler);
+            });
         });
         plugin.on("unload", function() {
             ensimeRunning = false;
             ensimeProcess = undefined;
+            language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/scala_completer");
         });
+
+        function setupHandler(handler) {
+            settings.on("project/ensime", sendSettings.bind(null, handler), plugin);
+            sendSettings(handler);
+        }
+
+        function sendSettings(handler) {
+            handler.emit("set_ensime_config", {
+                ensimeFile: settings.get("project/ensime/@ensimeFile")
+            });
+        }
 
         /***** Register and define API *****/
 
         function startEnsime() {
             if (ensimeRunning) return console.log("Ensime is already running.");
 
-            var file = settings.get("user/ensime/@ensimeFile");
+            var file = settings.get("project/ensime/@ensimeFile");
             console.log("Starting ensime-server for " + file);
             fs.exists(file, function(exists) {
                 if (!exists) return alert("Ensime file does not exist: " + file);
                 proc.spawn("bash", {
-                    args: [ "-c", launchCommand, "--", file ]
+                    args: ["-c", launchCommand, "--", file]
                 }, function(err, process) {
                     if (err) return console.error(err);
                     ensimeRunning = true;
