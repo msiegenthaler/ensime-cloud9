@@ -17,39 +17,55 @@ define(function(require, exports, module) {
 
         /***** Initialization *****/
 
-        var plugin = new Plugin("Ensime", main.consumes);
-        var emit = plugin.getEmitter();
+        var ensimeRunning = false;
+        var ensimeProcess;
 
-        var showing;
+
+        var plugin = new Plugin("Ensime", main.consumes);
+        var launchCommand = require("text!./server/start-server.sh").replace(/ {4}/g, " ");
+        var emit = plugin.getEmitter();
 
         function load() {
             commands.addCommand({
                 name: "startEnsime",
                 isAvailable: function() {
-                    return true;
+                    return !ensimeRunning;
                 },
                 exec: function() {
                     startEnsime();
                 }
             }, plugin);
 
+            commands.addCommand({
+                name: "stopEnsime",
+                isAvailable: function() {
+                    return ensimeRunning;
+                },
+                exec: function() {
+                    stopEnsime();
+                }
+            }, plugin);
+
             menus.addItemByPath("Run/Start Ensime Server", new ui.item({
                 command: "startEnsime"
-            }), 300, plugin);
+            }), 10550-10500, plugin);
+            menus.addItemByPath("Run/Stop Ensime Server", new ui.item({
+                command: "stopEnsime"
+            }), 10551-10500, plugin);
 
             settings.on("read", function(e) {
-                settings.setDefaults("user/ensome", [
+                settings.setDefaults("user/ensime", [
                     ["ensimeFile", "~/workspace/.ensime"]
                 ]);
             });
 
             prefs.add({
-                "Example": {
+                "Language": {
                     position: 450,
-                    "Ensime (Scala)": {
+                    "Scala (Ensime)": {
                         position: 100,
                         ".ensime Location": {
-                            type: "textfield",
+                            type: "textbox",
                             setting: "user/ensime/@ensimeFile",
                             position: 100
                         }
@@ -65,31 +81,47 @@ define(function(require, exports, module) {
         });
         plugin.on("unload", function() {
             ensimeRunning = false;
+            ensimeProcess = undefined;
         });
 
         /***** Register and define API *****/
-        var ensimeRunning = false;
 
         function startEnsime() {
+            if (ensimeRunning) return console.log("Ensime is already running.");
+
             var file = settings.get("user/ensime/@ensimeFile");
+            console.log("Starting ensime-server for " + file);
             fs.exists(file, function(exists) {
                 if (!exists) return alert("Ensime file does not exist: " + file);
-                proc.spawn("~/.c9/plugins/ensime/server/start-server.sh", file, function(err, process) {
+                proc.spawn("bash", {
+                    args: [ "-c", launchCommand, "--", file ]
+                }, function(err, process) {
                     if (err) return console.error(err);
                     ensimeRunning = true;
+                    ensimeProcess = process;
 
                     process.stderr.on("data", function(chunk) {
-                        console.warn("Ensime: "+chunk);
+                        chunk.split('\n').forEach(function(l) {
+                            if (l.length > 0) console.warn("ENSIME: " + l);
+                        });
                     });
                     process.stdout.on("data", function(chunk) {
-                        console.log("Ensime: "+chunk);
+                        chunk.split('\n').forEach(function(l) {
+                            if (l.length > 0) console.log("ENSIME: " + l);
+                        });
                     });
                     process.on("exit", function(code) {
                         console.log("Ensime server stopped");
                         ensimeRunning = false;
                     });
-                })
+                });
             });
+        }
+
+        function stopEnsime() {
+            if (!ensimeRunning) return console.log("Ensime is not running.");
+            ensimeProcess.kill(9);
+            console.log("Ensime process killed by stopEnsime().");
         }
 
         /**

@@ -14,7 +14,7 @@
     "url": "git@github.com:msiegenthaler/ensime-c9.git"
   },
   "plugins": {
-    "plugin": {}
+    "ensime": {}
   },
   "categories": ["miscellaneous"],
   "licenses": ["Apache2"]

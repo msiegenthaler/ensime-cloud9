@@ -5,15 +5,18 @@
 
 ENSIME_VERSION="0.9.10-SNAPSHOT"
 
+echo "Starting ensime-server $ENSIME_VERSION with '$1'..."
+
 if [ -x $1 ] ; then
     echo "No .ensime provided"
     exit 1
 fi
 
-ENSIME_CONFIG=`readlink -f $1`
+ENSIME_CONFIG=$1
+ENSIME_CONFIG="${ENSIME_CONFIG/#\~/$HOME}"
 
 if [ ! -f "$ENSIME_CONFIG" ] ; then
-    echo "ensime config $1 not found"
+    echo "ensime config $ENSIME_CONFIG not found"
     exit 1
 fi
 echo "Reading ENSIME ${ENSIME_VERSION} config from $ENSIME_CONFIG"
@@ -50,11 +53,10 @@ echo "  -> Using scala version $SCALA_VERSION"
 
 RESOLUTION_DIR=`mktemp -d`
 CLASSPATH_FILE="$RESOLUTION_DIR/classpath"
-CLASSPATH_LOG="$RESOLUTION_DIR/sbt.log"
 mkdir -p "$RESOLUTION_DIR"/project
 
 
-echo "  -> Resolving, log available in $CLASSPATH_LOG"
+echo "  -> Resolving.."
 # This bit is slow, and can definitely be cached to produce CLASSPATH
 
 cat <<EOF > "$RESOLUTION_DIR/build.sbt"
@@ -88,7 +90,7 @@ sbt.version=0.13.8
 EOF
 
 cd "$RESOLUTION_DIR"
-sbt saveClasspath > "$CLASSPATH_LOG"
+sbt saveClasspath
 
 CLASSPATH="$JDK_HOME/lib/tools.jar:`cat $CLASSPATH_FILE`"
 

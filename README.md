@@ -1,7 +1,7 @@
 Scala plugin for Cloud9
 =======================
 
-Provides advanced scala features based on *ensime*.
+Provides advanced Scala language features based on *ensime*.
 
 
 References
