@@ -86,7 +86,7 @@ saveClasspathTask := {
 EOF
 
 cat <<EOF > "$RESOLUTION_DIR/project/build.properties"
-sbt.version=0.13.8
+sbt.version=0.13.9
 EOF
 
 cd "$RESOLUTION_DIR"

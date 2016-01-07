@@ -24,7 +24,13 @@ define(function(require, exports, module) {
 
         var ensimeRunning = true; //TODO temporary
         var ensimeProcess;
-        var ensimePort = 33023;
+        var ensimePort;
+
+        // TODO temporary
+        fs.readFile("~/workspace/.ensime_cache/http", function(err, data) {
+            if (err) return console.error(err);
+            ensimePort = data;
+        });
 
         /** Plugin **/
 
@@ -94,6 +100,7 @@ define(function(require, exports, module) {
         plugin.on("unload", function() {
             ensimeRunning = false;
             ensimeProcess = undefined;
+            ensimePort = undefined;
             language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/scala_completer");
             jsonalyzer.unregisterWorkerHandler("plugins/ensime.language.scala/worker/scala_jsonalyzer");
         });
@@ -150,6 +157,7 @@ define(function(require, exports, module) {
         plugin.on("ensimeStopped", function() {
             ensimeRunning = false;
             ensimeProcess = undefined;
+            ensimePort = undefined;
         });
 
 
@@ -196,9 +204,15 @@ define(function(require, exports, module) {
                     revc = revc + chunk;
                 });
                 stream.on("end", function() {
-                    console.log("Ensime answered: ");
-                    console.log(revc);
-                    success({});
+                    //Argh, but I didn't find a http library (the one provided works directly from the client - not helpful here).
+                    var lines = revc.split('\r\n');
+                    var code = lines[0].split(' ')[1];
+                    if (code != 200) return fail("ensime-server returned http code " + code);
+
+                    var bodyStart = lines.indexOf('');
+                    var body = lines.splice(bodyStart + 1).join('\r\n');
+                    var response = JSON.parse(body);
+                    success(response);
                 });
                 stream.on("error", function() {
                     fail("Error reading from ensime-server");

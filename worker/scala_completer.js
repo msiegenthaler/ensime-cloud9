@@ -12,7 +12,7 @@ define(function(require, exports, module) {
   handler.init = function(callback) {
     emitter = handler.getEmitter();
     emitter.on("set_scala_config", function(e) {
-      console.log("settings are: "+JSON.stringify(e.data));
+      console.log("settings are: " + JSON.stringify(e.data));
     });
     console.log("Scala completer initialized.");
     callback();
@@ -20,13 +20,31 @@ define(function(require, exports, module) {
 
   handler.tooltip = function(doc, ast, cursorPos, options, callback) {
     console.log("Requesting tooltip info");
+    // callEnsime({
+    //   typehint: "SymbolAtPointReq",
+    //   file: "~/workspace/src/main/scala/example/Usage.scala",
+    //   point: 123
+    // callEnsime({
+    //   typehint: "CompletionsReq",
+    //   fileInfo: {
+    //     file: "~/workspace/src/main/scala/example/Usage.scala",
+    //     contents: "object A { def a(v: String) = v. }"
+    //   },
+    //   point: 16,
+    //   maxResults: 10,
+    //   caseSens: false,
+    //   reload: true
+    // }, function(err, result) {
+    // callEnsime({
+    //   typehint: "TypecheckAllReq"
+    // }, function(err, result) {
     callEnsime({
-      typehint: "SymbolAtPointReq",
-      file: "src/main/scala/example/Usage.scala",
-      point: 100
+      typehint: "ConnectionInfoReq"
     }, function(err, result) {
+
       if (err) return console.error("Call to ensime-server failed: " + err);
-      console.log("Got " + err + "   " + result);
+      console.log("Got ensime result");
+      console.log(result);
     });
 
 
@@ -44,7 +62,7 @@ define(function(require, exports, module) {
     emitter.on("callEnsime.result", function hdlr(event) {
       if (event.to !== reqId) return;
       handler.sender.off("callEnsime.result", hdlr);
-      callback(event.err, event.response);
+      callback(event.err, event.result);
     });
 
     emitter.emit("callEnsime", {
