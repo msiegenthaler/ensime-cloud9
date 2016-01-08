@@ -40,7 +40,6 @@ define(function(require, exports, module) {
     }, function(err, result) {
       if (err) return callback(err);
 
-      console.log(result);
       var completions = result.completions.map(function(r) {
         return {
           id: r.typeId,
@@ -53,12 +52,12 @@ define(function(require, exports, module) {
           guessTooltip: false
         };
       });
-      console.log(completions);
       callback(completions);
     });
   };
 
   handler.tooltip = function(doc, ast, pos, options, callback) {
+    /*
     console.log("Requesting tooltip info");
     //TODO There seems to be some problem with ensime atm, it returns a 500
     executeEnsime({
@@ -76,6 +75,7 @@ define(function(require, exports, module) {
         hint: "Hello there!"
       });
     });
+    */
   };
 
 

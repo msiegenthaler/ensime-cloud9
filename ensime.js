@@ -1,7 +1,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "language", "ui", "commands", "menus", "preferences",
-        "settings", "proc", "fs", "net", "jsonalyzer"
+        "settings", "notification.bubble", "proc", "fs", "net", "jsonalyzer"
     ];
     main.provides = ["ensime"];
     return main;
@@ -14,6 +14,7 @@ define(function(require, exports, module) {
         var commands = imports.commands;
         var settings = imports.settings;
         var prefs = imports.preferences;
+        var bubble = imports["notification.bubble"];
         var proc = imports.proc;
         var fs = imports.fs;
         var net = imports.net;
@@ -84,7 +85,8 @@ define(function(require, exports, module) {
                 exec: function() {
                     connectionInfo(function(err, result) {
                         if (err) return err;
-                        console.log(result);
+                        var msg = "Ensime: Protocol " + result.version + ", Implementation: " + result.implementation.name;
+                        bubble.popup(msg);
                     });
                 }
             }, plugin);
@@ -184,6 +186,7 @@ define(function(require, exports, module) {
                     if (err) return console.error(err);
                     ensimeRunning = true;
                     ensimeProcess = process;
+                    bubble.popup("Ensime is starting...");
 
                     //send a 'hello'
                     connectionInfo(function hdlr(err, result) {
@@ -192,6 +195,7 @@ define(function(require, exports, module) {
                             else return;
                         }
                         console.log("ensime-server is up and running.");
+                        bubble.popup("Ensime is ready.");
                     });
 
                     process.stderr.on("data", function(chunk) {
@@ -206,6 +210,7 @@ define(function(require, exports, module) {
                     });
 
                     process.on("exit", function(code) {
+                        bubble.popup("Ensime was stopped.");
                         console.log("Ensime server stopped");
                         emit("ensimeStopped", "Exited with code: " + code);
                     });
