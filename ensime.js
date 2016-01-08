@@ -38,8 +38,10 @@ define(function(require, exports, module) {
         var emit = plugin.getEmitter();
 
         function loadSettings() {
+
+            //Commands
             commands.addCommand({
-                name: "startEnsime",
+                name: "ensime.start",
                 isAvailable: function() {
                     return !ensimeRunning;
                 },
@@ -47,9 +49,8 @@ define(function(require, exports, module) {
                     startEnsime();
                 }
             }, plugin);
-
             commands.addCommand({
-                name: "stopEnsime",
+                name: "ensime.stop",
                 isAvailable: function() {
                     return ensimeRunning;
                 },
@@ -57,12 +58,55 @@ define(function(require, exports, module) {
                     stopEnsime();
                 }
             }, plugin);
+            commands.addCommand({
+                name: "ensime.typecheck",
+                isAvailable: function() {
+                    return ensimeRunning;
+                },
+                exec: function() {
+                    typecheck();
+                }
+            }, plugin);
+            commands.addCommand({
+                name: "ensime.unloadAll",
+                isAvailable: function() {
+                    return ensimeRunning;
+                },
+                exec: function() {
+                    ensimeUnloadAll();
+                }
+            }, plugin);
+            commands.addCommand({
+                name: "ensime.connectionInfo",
+                isAvailable: function() {
+                    return ensimeRunning;
+                },
+                exec: function() {
+                    connectionInfo(function(err, result) {
+                        if (err) return err;
+                        console.log(result);
+                    });
+                }
+            }, plugin);
 
-            menus.addItemByPath("Run/Start Ensime", new ui.item({
-                command: "startEnsime"
+
+            // Menus
+            menus.setRootMenu("Scala", 550, plugin);
+            menus.addItemByPath("Scala/Typecheck All", new ui.item({
+                command: "ensime.typecheck"
+            }), 1000, plugin);
+            menus.addItemByPath("Scala/Unload All", new ui.item({
+                command: "ensime.unloadAll"
+            }), 1001, plugin);
+            menus.addItemByPath("Scala/Connection Info", new ui.item({
+                command: "ensime.connectionInfo"
+            }), 1100, plugin);
+            menus.addItemByPath("Scala/~", new ui.divider(), 2000, plugin);
+            menus.addItemByPath("Scala/Start Ensime", new ui.item({
+                command: "ensime.start"
             }), 10550, plugin);
-            menus.addItemByPath("Run/Stop Ensime", new ui.item({
-                command: "stopEnsime"
+            menus.addItemByPath("Scala/Stop Ensime", new ui.item({
+                command: "ensime.stop"
             }), 10551, plugin);
 
             settings.on("read", function(e) {
@@ -71,6 +115,7 @@ define(function(require, exports, module) {
                 ]);
             });
 
+            // Preferences
             prefs.add({
                 "Language": {
                     position: 450,
@@ -91,6 +136,11 @@ define(function(require, exports, module) {
 
         plugin.on("load", function() {
             loadSettings();
+            plugin.on("callEnsime", function(event) {
+                callEnsime(event, {
+                    emit: emit
+                });
+            });
             language.registerLanguageHandler("plugins/ensime.language.scala/worker/scala_completer", function(err, handler) {
                 if (err) return console.error(err);
                 setupHandler(handler);
@@ -134,6 +184,15 @@ define(function(require, exports, module) {
                     if (err) return console.error(err);
                     ensimeRunning = true;
                     ensimeProcess = process;
+
+                    //send a 'hello'
+                    connectionInfo(function hdlr(err, result) {
+                        if (err) {
+                            if (ensimeRunning) connectionInfo(hdlr);
+                            else return;
+                        }
+                        console.log("ensime-server is up and running.");
+                    });
 
                     process.stderr.on("data", function(chunk) {
                         chunk.split('\n').forEach(function(l) {
@@ -223,6 +282,54 @@ define(function(require, exports, module) {
                 stream.on("error", function() {
                     fail("Error reading from ensime-server");
                 });
+            });
+        }
+
+
+        /** Ensime commands. */
+        var last_id = 0;
+
+        function executeEnsime(req, callback) {
+            var reqId = last_id++;
+
+            plugin.on("callEnsime.result", function hdlr(event) {
+                if (event.to !== reqId) return;
+                plugin.off("callEnsime.result", hdlr);
+                callback(event.err, event.result);
+            });
+
+            emit("callEnsime", {
+                id: reqId,
+                request: req
+            });
+        }
+
+        function connectionInfo(callback) {
+            executeEnsime({
+                typehint: "ConnectionInfoReq"
+            }, function(err, result) {
+                if (err) return callback(err);
+                callback(undefined, result);
+            });
+        }
+
+        function typecheck() {
+            console.log("Executing typecheck...");
+            executeEnsime({
+                typehint: "TypecheckAllReq"
+            }, function(err, result) {
+                if (err) console.warn("Typecheck failed: " + err);
+                console.log("Typecheck finished: " + result);
+            });
+        }
+
+        function ensimeUnloadAll() {
+            console.log("Executing ensimeUnloadAll...");
+            executeEnsime({
+                typehint: "UnloadAllReq"
+            }, function(err, result) {
+                if (err) console.warn("ensimeUnloadAll failed: " + err);
+                console.log("ensimeUnloadAll finished: " + result);
             });
         }
 

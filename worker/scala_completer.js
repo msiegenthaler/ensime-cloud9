@@ -27,7 +27,7 @@ define(function(require, exports, module) {
 
 
   handler.complete = function(doc, ast, pos, options, callback) {
-    callEnsime({
+    executeEnsime({
       typehint: "CompletionsReq",
       fileInfo: {
         file: ".." + handler.path,
@@ -60,23 +60,18 @@ define(function(require, exports, module) {
 
   handler.tooltip = function(doc, ast, pos, options, callback) {
     console.log("Requesting tooltip info");
-    // There seems to be some problem with ensime atm, it returns a 500
-    callEnsime({
-      //typehint: "TypecheckAllReq"
-
+    //TODO There seems to be some problem with ensime atm, it returns a 500
+    executeEnsime({
       typehint: "SymbolAtPointReq",
       file: {
         file: ".." + handler.path,
         contents: doc.getValue()
       },
       point: calcPoint(doc, pos)
-
-      // typehint: "ConnectionInfoReq"
     }, function(err, result) {
       if (err) return callback(err);
-      // console.log("Got ensime result");
-      // console.log(result);
-      // 
+      console.log(result);
+
       callback(undefined, {
         hint: "Hello there!"
       });
@@ -88,7 +83,7 @@ define(function(require, exports, module) {
 
   var last_id = 0;
 
-  function callEnsime(req, callback) {
+  function executeEnsime(req, callback) {
     var reqId = last_id++;
 
     emitter.on("callEnsime.result", function hdlr(event) {
