@@ -18,40 +18,72 @@ define(function(require, exports, module) {
     callback();
   };
 
-  handler.tooltip = function(doc, ast, cursorPos, options, callback) {
-    console.log("Requesting tooltip info");
-    // callEnsime({
-    //   typehint: "SymbolAtPointReq",
-    //   file: "~/workspace/src/main/scala/example/Usage.scala",
-    //   point: 123
-    // callEnsime({
-    //   typehint: "CompletionsReq",
-    //   fileInfo: {
-    //     file: "~/workspace/src/main/scala/example/Usage.scala",
-    //     contents: "object A { def a(v: String) = v. }"
-    //   },
-    //   point: 16,
-    //   maxResults: 10,
-    //   caseSens: false,
-    //   reload: true
-    // }, function(err, result) {
-    // callEnsime({
-    //   typehint: "TypecheckAllReq"
-    // }, function(err, result) {
+
+  function calcPoint(doc, pos) {
+    return doc.getLines(0, pos.row - 1).reduce(function(sf, l) {
+      return sf + l.length + 1;
+    }, 0) + pos.column;
+  }
+
+
+  handler.complete = function(doc, ast, pos, options, callback) {
     callEnsime({
-      typehint: "ConnectionInfoReq"
+      typehint: "CompletionsReq",
+      fileInfo: {
+        file: ".." + handler.path,
+        contents: doc.getValue()
+      },
+      point: calcPoint(doc, pos),
+      maxResults: 30,
+      caseSens: false,
+      reload: true
     }, function(err, result) {
+      if (err) return callback(err);
 
-      if (err) return console.error("Call to ensime-server failed: " + err);
-      console.log("Got ensime result");
       console.log(result);
-    });
-
-
-    callback(undefined, {
-      hint: "Hello there!"
+      var completions = result.completions.map(function(r) {
+        return {
+          id: r.typeId,
+          name: r.name,
+          replaceText: r.name,
+          icon: r.isCallable ? "method" : "property",
+          meta: r.typeSig.result,
+          priority: r.relevance,
+          isContextual: true,
+          guessTooltip: false
+        };
+      });
+      console.log(completions);
+      callback(completions);
     });
   };
+
+  handler.tooltip = function(doc, ast, pos, options, callback) {
+    console.log("Requesting tooltip info");
+    // There seems to be some problem with ensime atm, it returns a 500
+    callEnsime({
+      //typehint: "TypecheckAllReq"
+
+      typehint: "SymbolAtPointReq",
+      file: {
+        file: ".." + handler.path,
+        contents: doc.getValue()
+      },
+      point: calcPoint(doc, pos)
+
+      // typehint: "ConnectionInfoReq"
+    }, function(err, result) {
+      if (err) return callback(err);
+      // console.log("Got ensime result");
+      // console.log(result);
+      // 
+      callback(undefined, {
+        hint: "Hello there!"
+      });
+    });
+  };
+
+
 
 
   var last_id = 0;

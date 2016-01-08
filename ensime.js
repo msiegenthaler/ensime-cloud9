@@ -168,8 +168,11 @@ define(function(require, exports, module) {
         }
 
 
+        var encoder = new window.TextEncoder("utf-8");
+
         function callEnsime(data, worker) {
             function fail(reason) {
+                console.warn("Ensime call failed: " + reason);
                 worker.emit("callEnsime.result", {
                     to: data.id,
                     err: reason
@@ -186,19 +189,21 @@ define(function(require, exports, module) {
                 return fail("ensime-server not running");
 
             net.connect(ensimePort, {
-                retries: 3
+                retries: 3,
+                encoding: "utf-8"
             }, function(err, stream) {
                 if (err) return fail("Could not connect to ensime.");
+
+
                 var json = JSON.stringify(data.request);
                 stream.write("POST /rpc HTTP/1.0\r\n");
                 stream.write("Host: localhost\r\n");
                 stream.write("Content-Type: application/json\r\n");
-                stream.write("Content-Length: " + json.length + "\r\n"); //TODO better use an array (2-char values..)
+                stream.write("Content-Length: " + encoder.encode(json).length + "\r\n");
                 stream.write("\r\n");
                 stream.write(json);
                 stream.write("\r\n\r\n");
 
-                //TODO error handling...
                 var revc = "";
                 stream.on("data", function(chunk) {
                     revc = revc + chunk;
@@ -206,11 +211,12 @@ define(function(require, exports, module) {
                 stream.on("end", function() {
                     //Argh, but I didn't find a http library (the one provided works directly from the client - not helpful here).
                     var lines = revc.split('\r\n');
-                    var code = lines[0].split(' ')[1];
-                    if (code != 200) return fail("ensime-server returned http code " + code);
-
                     var bodyStart = lines.indexOf('');
                     var body = lines.splice(bodyStart + 1).join('\r\n');
+
+                    var code = lines[0].split(' ')[1];
+                    if (code != 200) return fail("ensime-server returned http code " + code + ": " + body);
+
                     var response = JSON.parse(body);
                     success(response);
                 });
