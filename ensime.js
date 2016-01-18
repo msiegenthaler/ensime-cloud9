@@ -20,12 +20,13 @@ define(function(require, exports, module) {
         /***** Initialization *****/
 
         var ensimeRunning = false;
+        var ensimeReady = false;
         var ensimeConnector;
+        var last_call_id = 0;
 
         /** Plugin **/
 
         var plugin = new Plugin("Ensime", main.consumes);
-        var emit = plugin.getEmitter();
 
         function loadSettings() {
 
@@ -56,33 +57,31 @@ define(function(require, exports, module) {
             commands.addCommand({
                 name: "ensime.typecheck",
                 isAvailable: function() {
-                    return ensimeRunning;
+                    return ensimeReady;
                 },
                 exec: function() {
                     typecheck(function(err) {
                         if (err)
                             return bubble.popup("Typecheck All failed: " + err);
-                        bubble.popup("Typecheck is now completed.");
                     });
                 }
             }, plugin);
             commands.addCommand({
                 name: "ensime.unloadAll",
                 isAvailable: function() {
-                    return ensimeRunning;
+                    return ensimeReady;
                 },
                 exec: function() {
                     ensimeUnloadAll(function(err) {
                         if (err)
                             return bubble.popup("Could not execute unloadAll: " + err);
-                        bubble.popup("UnloadAll successful.");
                     });
                 }
             }, plugin);
             commands.addCommand({
                 name: "ensime.connectionInfo",
                 isAvailable: function() {
-                    return ensimeRunning;
+                    return ensimeReady;
                 },
                 exec: function() {
                     connectionInfo(function(err, result) {
@@ -140,11 +139,6 @@ define(function(require, exports, module) {
 
         plugin.on("load", function() {
             loadSettings();
-            // plugin.on("callEnsime", function(event) {
-            // callEnsime(event, {
-            // emit: emit
-            // });
-            // });
             language.registerLanguageHandler("plugins/ensime.language.scala/worker/ensime_connector", function(err, handler) {
                 if (err) return console.error(err);
                 console.log("ensime-connector initialized.");
@@ -165,16 +159,11 @@ define(function(require, exports, module) {
                 if (err) return console.error(err);
             });
             jsonalyzer.registerWorkerHandler("plugins/ensime.language.scala/worker/scala_jsonalyzer");
-
-            //Start ensime on load
-            startEnsime(function(err, callback) {
-                if (err) return;
-                bubble.popup("Ensime started.");
-            });
         });
         plugin.on("unload", function() {
             ensimeConnector = null;
             ensimeRunning = false;
+            ensimeReady = false;
             jsonalyzer.unregisterWorkerHandler("plugins/ensime.language.scala/worker/scala_jsonalyzer");
             language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/scala_completer");
             language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/ensime_connector");
@@ -186,17 +175,26 @@ define(function(require, exports, module) {
             });
             ensimeConnector.on("starting", function() {
                 ensimeRunning = true;
+                ensimeReady = false;
                 bubble.popup("ENSIME is starting...");
             });
             ensimeConnector.on("started", function() {
                 ensimeRunning = true;
+                ensimeReady = true;
                 bubble.popup("ENSIME started.");
             });
             ensimeConnector.on("stopped", function(code) {
                 ensimeRunning = false;
+                ensimeReady = false;
                 bubble.popup("ENSIME started.");
             });
 
+            ensimeConnector.on("event", function(event) {
+                if (event.typehint == "FullTypeCheckCompleteEvent")
+                    bubble.popup("Typecheck completed.");
+                else if (event.typehint == "CompilerRestartedEvent")
+                    bubble.popup("ENSIME is recompiling.");
+            });
         }
 
         /***** Register and define API *****/
@@ -214,34 +212,29 @@ define(function(require, exports, module) {
             ensimeConnector.emit("stop");
         }
 
-
-        /** Ensime commands. */
-
-        var last_id = 0;
-
-        function executeEnsime(req, callback, canary) {
-            var reqId = last_id++;
-
-            plugin.on("callEnsime.result", function hdlr(event) {
-                if (event.to !== reqId) return;
-                plugin.off("callEnsime.result", hdlr);
-                callback(event.err, event.result);
+        function executeEnsime(req, callback) {
+            var reqId = last_call_id++;
+            ensimeConnector.on("call.result", function hdlr(event) {
+                if (event.id !== reqId) return;
+                plugin.off("call.result", hdlr);
+                callback(event.error, event.result);
             });
-
-            emit("callEnsime", {
+            ensimeConnector.emit("call", {
                 id: reqId,
                 request: req,
-                canary: canary
             });
         }
 
-        function connectionInfo(callback, canary) {
+        /** Ensime commands. */
+
+
+        function connectionInfo(callback) {
             executeEnsime({
                 typehint: "ConnectionInfoReq"
             }, function(err, result) {
                 if (err) return callback(err);
                 callback(undefined, result);
-            }, canary);
+            });
         }
 
         function typecheck(callback) {

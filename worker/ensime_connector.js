@@ -12,6 +12,7 @@
  * - stopped
  * - log
  * - event
+ * - call.result
  */
 define(function(require, exports, module) {
 
@@ -39,6 +40,7 @@ define(function(require, exports, module) {
 
     emitter.on("start", start);
     emitter.on("stop", stop);
+    emitter.on("call", call);
     callback();
   };
 
@@ -63,7 +65,8 @@ define(function(require, exports, module) {
           console.log("ENSIME started.");
           ensimePort = event.port;
           emitter.emit("started");
-        } else {
+        }
+        else {
           emitter.emit("event", event);
         }
       });
@@ -72,6 +75,8 @@ define(function(require, exports, module) {
       });
       process.on("exit", function(code) {
         emitter.emit("stopped", code);
+        ensimeProcess = undefined;
+        ensimePort = undefined;
         console.log("Ensime server stopped (code " + code + ")");
       });
     });
@@ -80,6 +85,28 @@ define(function(require, exports, module) {
   function stop() {
     if (ensimeProcess)
       ensimeProcess.kill();
+    ensimeProcess = undefined;
+    ensimePort = undefined;
     emitter.emit("stopped", -1);
+  }
+
+  function call(request) {
+    if (!ensimePort)
+      return console.warn("Could not execute call to ENSIME, since it is not running.");
+
+    var data = JSON.stringify(request.request);
+    workerUtil.execFile("curl", {
+      args: ["http://localhost:" + ensimePort + "/rpc",
+        "-X", "POST", "-H", "Content-Type: application/json", "-s", "-f",
+        "--data-binary", data
+      ]
+    }, function(err, stdout, stderr) {
+      var result = {
+        id: request.id
+      };
+      if (err) result.error = "Call failed: " + JSON.stringify(err);
+      else result.result = JSON.parse(stdout);
+      emitter.emit("call.result", result);
+    });
   }
 });
