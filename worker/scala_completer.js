@@ -50,26 +50,4 @@ define(function(require, exports, module) {
       callback(completions);
     });
   };
-
-  /*
-    handler.tooltip = function(doc, ast, pos, options, callback) {
-      console.log("Requesting tooltip info");
-      //TODO There seems to be some problem with ensime atm, it returns a 500
-      executeEnsime({
-        typehint: "SymbolAtPointReq",
-        file: {
-          file: ".." + handler.path,
-          contents: doc.getValue()
-        },
-        point: calcPoint(doc, pos)
-      }, function(err, result) {
-        if (err) return callback(err);
-        console.log(result);
-
-        callback(undefined, {
-          hint: "Hello there!"
-        });
-      });
-    };
-  */
 });
