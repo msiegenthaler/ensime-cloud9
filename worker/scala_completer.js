@@ -1,11 +1,10 @@
 define(function(require, exports, module) {
 
   var baseHandler = require("plugins/c9.ide.language/base_handler");
+  var util = require("./util");
 
   var handler = module.exports = Object.create(baseHandler);
   var emitter;
-  var call_id_prefix = "completer";
-  var last_call_id = 0;
 
   handler.handlesLanguage = function(language) {
     return language === "scala";
@@ -18,23 +17,9 @@ define(function(require, exports, module) {
   };
 
   function executeEnsime(req, callback) {
-    var reqId = call_id_prefix + (last_call_id++);
-    emitter.on("call.result", function hdlr(event) {
-      if (event.id !== reqId) return;
-      emitter.off("call.result", hdlr);
-      callback(event.error, event.result);
-    });
-    emitter.emit("call", {
-      id: reqId,
-      request: req,
-    });
+    util.executeEnsime(emitter, req, callback);
   }
 
-  function calcPoint(doc, pos) {
-    return doc.getLines(0, pos.row - 1).reduce(function(sf, l) {
-      return sf + l.length + 1;
-    }, 0) + pos.column;
-  }
 
   handler.complete = function(doc, ast, pos, options, callback) {
     executeEnsime({
@@ -43,7 +28,7 @@ define(function(require, exports, module) {
         file: ".." + handler.path,
         contents: doc.getValue()
       },
-      point: calcPoint(doc, pos),
+      point: util.calcPoint(doc, pos),
       maxResults: 30,
       caseSens: false,
       reload: true
