@@ -1,7 +1,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "language", "ui", "commands", "menus", "preferences",
-        "settings", "notification.bubble", "jsonalyzer"
+        "settings", "notification.bubble"
     ];
     main.provides = ["ensime"];
     return main;
@@ -15,7 +15,6 @@ define(function(require, exports, module) {
         var settings = imports.settings;
         var prefs = imports.preferences;
         var bubble = imports["notification.bubble"];
-        var jsonalyzer = imports.jsonalyzer;
 
         /***** Initialization *****/
 
@@ -161,14 +160,17 @@ define(function(require, exports, module) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
             });
-            jsonalyzer.registerWorkerHandler("plugins/ensime.language.scala/worker/scala_jsonalyzer");
+            language.registerLanguageHandler("plugins/ensime.language.scala/worker/scala_outline", function(err, handler) {
+                if (err) return console.error(err);
+                setupConnectorBridge(handler);
+            });
         });
         plugin.on("unload", function() {
             ensimeConnector = null;
             ensimeRunning = false;
             ensimeReady = false;
-            jsonalyzer.unregisterWorkerHandler("plugins/ensime.language.scala/worker/scala_jsonalyzer");
             language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/scala_completer");
+            language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/scala_outline");
             language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/ensime_connector");
         });
         plugin.on("connector.ready", function() {
