@@ -22,11 +22,13 @@ define(function(require, exports, module) {
         var ensimeRunning = false;
         var ensimeReady = false;
         var ensimeConnector;
+        var call_id_prefix = "plugin";
         var last_call_id = 0;
 
         /** Plugin **/
 
         var plugin = new Plugin("Ensime", main.consumes);
+        var emit = plugin.getEmitter();
 
         function loadSettings() {
 
@@ -152,11 +154,12 @@ define(function(require, exports, module) {
                 settings.on("project/ensime", sendSettings.bind(null, handler), plugin);
                 sendSettings(handler);
 
-                registerEnsimeHandlers();
-                startEnsime();
+                registerEnsimeHandlers(handler);
+                emit("connector.ready", handler);
             });
             language.registerLanguageHandler("plugins/ensime.language.scala/worker/scala_completer", function(err, handler) {
                 if (err) return console.error(err);
+                setupConnectorBridge(handler);
             });
             jsonalyzer.registerWorkerHandler("plugins/ensime.language.scala/worker/scala_jsonalyzer");
         });
@@ -168,32 +171,44 @@ define(function(require, exports, module) {
             language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/scala_completer");
             language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/ensime_connector");
         });
+        plugin.on("connector.ready", function() {
+            startEnsime();
+        });
 
-        function registerEnsimeHandlers() {
-            ensimeConnector.on("log", function(data) {
+        function registerEnsimeHandlers(handler) {
+            handler.on("log", function(data) {
                 console.log("ENSIME: " + data);
             });
-            ensimeConnector.on("starting", function() {
+            handler.on("starting", function() {
                 ensimeRunning = true;
                 ensimeReady = false;
                 bubble.popup("ENSIME is starting...");
             });
-            ensimeConnector.on("started", function() {
+            handler.on("started", function() {
                 ensimeRunning = true;
                 ensimeReady = true;
                 bubble.popup("ENSIME started.");
             });
-            ensimeConnector.on("stopped", function(code) {
+            handler.on("stopped", function(code) {
                 ensimeRunning = false;
                 ensimeReady = false;
                 bubble.popup("ENSIME started.");
             });
 
-            ensimeConnector.on("event", function(event) {
+            handler.on("event", function(event) {
                 if (event.typehint == "FullTypeCheckCompleteEvent")
                     bubble.popup("Typecheck completed.");
                 else if (event.typehint == "CompilerRestartedEvent")
                     bubble.popup("ENSIME is recompiling.");
+            });
+        }
+
+        function setupConnectorBridge(handler) {
+            handler.on("call", function(event) {
+                ensimeConnector.emit("call", event);
+            });
+            ensimeConnector.on("call.result", function(event) {
+                handler.emit("call.result", event);
             });
         }
 
@@ -213,7 +228,8 @@ define(function(require, exports, module) {
         }
 
         function executeEnsime(req, callback) {
-            var reqId = last_call_id++;
+            if (!ensimeConnector) return callback("ensime-connector not started.");
+            var reqId = call_id_prefix + (last_call_id++);
             ensimeConnector.on("call.result", function hdlr(event) {
                 if (event.id !== reqId) return;
                 plugin.off("call.result", hdlr);

@@ -4,6 +4,8 @@ define(function(require, exports, module) {
 
   var handler = module.exports = Object.create(baseHandler);
   var emitter;
+  var call_id_prefix = "completer";
+  var last_call_id = 0;
 
   handler.handlesLanguage = function(language) {
     return language === "scala";
@@ -11,20 +13,28 @@ define(function(require, exports, module) {
 
   handler.init = function(callback) {
     emitter = handler.getEmitter();
-    emitter.on("set_scala_config", function(e) {
-      console.log("settings are: " + JSON.stringify(e.data));
-    });
     console.log("Scala completer initialized.");
     callback();
   };
 
+  function executeEnsime(req, callback) {
+    var reqId = call_id_prefix + (last_call_id++);
+    emitter.on("call.result", function hdlr(event) {
+      if (event.id !== reqId) return;
+      emitter.off("call.result", hdlr);
+      callback(event.error, event.result);
+    });
+    emitter.emit("call", {
+      id: reqId,
+      request: req,
+    });
+  }
 
   function calcPoint(doc, pos) {
     return doc.getLines(0, pos.row - 1).reduce(function(sf, l) {
       return sf + l.length + 1;
     }, 0) + pos.column;
   }
-
 
   handler.complete = function(doc, ast, pos, options, callback) {
     executeEnsime({
@@ -56,45 +66,25 @@ define(function(require, exports, module) {
     });
   };
 
-  handler.tooltip = function(doc, ast, pos, options, callback) {
-    /*
-    console.log("Requesting tooltip info");
-    //TODO There seems to be some problem with ensime atm, it returns a 500
-    executeEnsime({
-      typehint: "SymbolAtPointReq",
-      file: {
-        file: ".." + handler.path,
-        contents: doc.getValue()
-      },
-      point: calcPoint(doc, pos)
-    }, function(err, result) {
-      if (err) return callback(err);
-      console.log(result);
+  /*
+    handler.tooltip = function(doc, ast, pos, options, callback) {
+      console.log("Requesting tooltip info");
+      //TODO There seems to be some problem with ensime atm, it returns a 500
+      executeEnsime({
+        typehint: "SymbolAtPointReq",
+        file: {
+          file: ".." + handler.path,
+          contents: doc.getValue()
+        },
+        point: calcPoint(doc, pos)
+      }, function(err, result) {
+        if (err) return callback(err);
+        console.log(result);
 
-      callback(undefined, {
-        hint: "Hello there!"
+        callback(undefined, {
+          hint: "Hello there!"
+        });
       });
-    });
-    */
-  };
-
-
-
-
-  var last_id = 0;
-
-  function executeEnsime(req, callback) {
-    var reqId = last_id++;
-
-    emitter.on("callEnsime.result", function hdlr(event) {
-      if (event.to !== reqId) return;
-      handler.sender.off("callEnsime.result", hdlr);
-      callback(event.err, event.result);
-    });
-
-    emitter.emit("callEnsime", {
-      id: reqId,
-      request: req
-    });
-  }
+    };
+  */
 });
