@@ -24,13 +24,11 @@ define(function(require, exports, module) {
     executeEnsime({
       typehint: "StructureViewReq",
       fileInfo: {
-        file: ".." + handler.path,
+        file: handler.workspaceDir + handler.path,
         contents: doc.getValue()
       }
     }, function(err, result) {
       if (err) return callback(err);
-      console.log(result); //TODO remove
-
       var ol = result.view.map(function(e) {
         return convert(doc, e);
       });

@@ -196,9 +196,7 @@ define(function(require, exports, module) {
             });
 
             handler.on("event", function(event) {
-                if (event.typehint == "FullTypeCheckCompleteEvent")
-                    bubble.popup("Typecheck completed.");
-                else if (event.typehint == "CompilerRestartedEvent")
+                if (event.typehint == "CompilerRestartedEvent")
                     bubble.popup("ENSIME is recompiling.");
             });
         }
@@ -209,6 +207,9 @@ define(function(require, exports, module) {
             });
             ensimeConnector.on("call.result", function(event) {
                 handler.emit("call.result", event);
+            });
+            ensimeConnector.on("event", function(event) {
+                handler.emit("event", event);
             });
         }
 

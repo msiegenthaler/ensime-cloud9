@@ -25,7 +25,7 @@ define(function(require, exports, module) {
     executeEnsime({
       typehint: "CompletionsReq",
       fileInfo: {
-        file: ".." + handler.path,
+        file: handler.workspaceDir + handler.path,
         contents: doc.getValue()
       },
       point: util.posToOffset(doc, pos),
