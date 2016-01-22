@@ -185,6 +185,9 @@ define(function(require, exports, module) {
                 ensimeRunning = true;
                 ensimeReady = true;
                 bubble.popup("ENSIME started.");
+                typecheck(function(err) {
+                    if (err) return bubble.popup("Typecheck not successful");
+                });
             });
             handler.on("stopped", function(code) {
                 ensimeRunning = false;
