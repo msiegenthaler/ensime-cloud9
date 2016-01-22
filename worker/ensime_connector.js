@@ -45,11 +45,12 @@ define(function(require, exports, module) {
   };
 
 
-  function start() {
-    console.log("Start requested.");
+  function start(attach) {
+    console.log("Start requested with attach=" + attach);
     workerUtil.spawn("/home/ubuntu/.nvm/versions/node/v4.1.1/bin/node", {
       args: ["../.c9/plugins/ensime.language.scala/server/ensime-runner.js",
-        dotEnsime
+        dotEnsime,
+        attach.toString()
       ]
     }, function(err, process) {
       if (err) return console.error(err);

@@ -38,9 +38,7 @@ define(function(require, exports, module) {
                     return !ensimeRunning;
                 },
                 exec: function() {
-                    startEnsime(function(err) {
-                        if (err) return bubble.popup("Could not start ensime: " + err);
-                    });
+                    startEnsime(false);
                 }
             }, plugin);
             commands.addCommand({
@@ -49,10 +47,7 @@ define(function(require, exports, module) {
                     return ensimeRunning;
                 },
                 exec: function() {
-                    stopEnsime(function(err) {
-                        if (err)
-                            return bubble.popup("Could not stop ensime: " + err);
-                    });
+                    stopEnsime();
                 }
             }, plugin);
             commands.addCommand({
@@ -174,7 +169,7 @@ define(function(require, exports, module) {
             language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/ensime_connector");
         });
         plugin.on("connector.ready", function() {
-            startEnsime();
+            startEnsime(true);
         });
 
         function registerEnsimeHandlers(handler) {
@@ -194,7 +189,7 @@ define(function(require, exports, module) {
             handler.on("stopped", function(code) {
                 ensimeRunning = false;
                 ensimeReady = false;
-                bubble.popup("ENSIME started.");
+                bubble.popup("ENSIME stopped.");
             });
 
             handler.on("event", function(event) {
@@ -217,10 +212,10 @@ define(function(require, exports, module) {
         /***** Register and define API *****/
 
         /** Ensime-server handling */
-        function startEnsime() {
+        function startEnsime(attach) {
             if (!ensimeConnector) return console.error("ensime-connector not started.");
             if (ensimeRunning) return;
-            ensimeConnector.emit("start");
+            ensimeConnector.emit("start", attach);
         }
 
         function stopEnsime() {
