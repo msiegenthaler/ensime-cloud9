@@ -159,6 +159,10 @@ define(function(require, exports, module) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
             });
+            language.registerLanguageHandler("plugins/ensime.language.scala/worker/scala_markers", function(err, handler) {
+                if (err) return console.error(err);
+                setupConnectorBridge(handler);
+            });
         });
         plugin.on("unload", function() {
             ensimeConnector = null;
@@ -166,6 +170,7 @@ define(function(require, exports, module) {
             ensimeReady = false;
             language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/scala_completer");
             language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/scala_outline");
+            language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/scala_markers");
             language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/ensime_connector");
         });
         plugin.on("connector.ready", function() {
