@@ -19,6 +19,7 @@ define(function(require, exports, module) {
   };
 
   var markers = [];
+  var pending = [];
 
   function handleEvent(event) {
     if (event.typehint === "NewScalaNotesEvent") {
@@ -29,8 +30,11 @@ define(function(require, exports, module) {
       markers = [];
     }
     else if (event.typehint === "FullTypeCheckCompleteEvent") {
-      console.log("Complete type check");
-      // TODO workerUtil.refreshAllMarkers();
+      //Typecheck done, now send the markers to the callbacks
+      pending.forEach(function(p) {
+        p();
+      });
+      pending = [];
     }
   }
 
@@ -74,7 +78,6 @@ define(function(require, exports, module) {
 
   handler.analyze = function(doc, ast, options, callback) {
     var file = handler.path;
-    if (options.minimalAnalysis) return callback(false, []);
     executeEnsime({
       typehint: "TypecheckFileReq",
       fileInfo: {
@@ -82,12 +85,15 @@ define(function(require, exports, module) {
         contents: doc
       }
     }, function() {
-      //ignore, we will just get new notes..
+      //ignore, we wait for typecheck to complete
     });
 
-    var ms = markers.filter(function(m) {
-      return m.file === file;
+    //defer the answer until the typecheck is done.
+    pending.push(function() {
+      var ms = markers.filter(function(m) {
+        return m.file === file;
+      });
+      callback(false, ms);
     });
-    callback(false, ms);
   };
 });

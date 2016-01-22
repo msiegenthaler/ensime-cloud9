@@ -60,7 +60,7 @@ define(function(require, exports, module) {
 
       process.stdout.on("data", function(chunk) {
         //TODO chunk to message mapping might not always be 1:1
-        //console.log("ENSIME-EVENT: " + chunk);
+        console.debug("ENSIME-EVENT: " + chunk);
         var event = JSON.parse(chunk);
         if (event.type === "started") {
           console.log("ENSIME started.");
