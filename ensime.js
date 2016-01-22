@@ -51,6 +51,12 @@ define(function(require, exports, module) {
                 }
             }, plugin);
             commands.addCommand({
+                name: "ensime.update",
+                exec: function() {
+                    updateEnsime();
+                }
+            }, plugin);
+            commands.addCommand({
                 name: "ensime.typecheck",
                 isAvailable: function() {
                     return ensimeReady;
@@ -101,12 +107,15 @@ define(function(require, exports, module) {
                 command: "ensime.connectionInfo"
             }), 1100, plugin);
             menus.addItemByPath("Scala/~", new ui.divider(), 2000, plugin);
-            menus.addItemByPath("Scala/Start Ensime", new ui.item({
+            menus.addItemByPath("Scala/Start ENSIME", new ui.item({
                 command: "ensime.start"
             }), 10550, plugin);
-            menus.addItemByPath("Scala/Stop Ensime", new ui.item({
+            menus.addItemByPath("Scala/Stop ENSIME", new ui.item({
                 command: "ensime.stop"
             }), 10551, plugin);
+            menus.addItemByPath("Scala/Update ENSIME", new ui.item({
+                command: "ensime.update"
+            }), 10552, plugin);
 
             settings.on("read", function(e) {
                 settings.setDefaults("project/ensime", [
@@ -199,6 +208,12 @@ define(function(require, exports, module) {
                 ensimeReady = false;
                 bubble.popup("ENSIME stopped.");
             });
+            handler.on("updated", function() {
+                bubble.popup("ENSIME was updated.");
+            });
+            handler.on("updateFailed", function(error) {
+                bubble.popup("ENSIME could not be updated: " + error);
+            });
 
             handler.on("event", function(event) {
                 if (event.typehint == "CompilerRestartedEvent")
@@ -231,6 +246,11 @@ define(function(require, exports, module) {
             if (!ensimeConnector) return console.error("ensime-connector not started.");
             if (!ensimeRunning) return;
             ensimeConnector.emit("stop");
+        }
+
+        function updateEnsime() {
+            if (!ensimeConnector) return console.error("ensime-connector not started.");
+            ensimeConnector.emit("update");
         }
 
         function executeEnsime(req, callback) {

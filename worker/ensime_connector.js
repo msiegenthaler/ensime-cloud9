@@ -4,12 +4,15 @@
  *  - set_ensime_config
  *  - start
  *  - stop
+ *  - update
  *  - call
  * 
  * Outgoing:
  * - starting
  * - started
  * - stopped
+ * - updated
+ * - updateFailed
  * - log
  * - event
  * - call.result
@@ -18,6 +21,10 @@ define(function(require, exports, module) {
 
   var baseHandler = require("plugins/c9.ide.language/base_handler");
   var workerUtil = require("plugins/c9.ide.language/worker_util");
+
+  var node = "/home/ubuntu/.nvm/versions/node/v4.1.1/bin/node";
+  var sbt = "/home/ubuntu/.linuxbrew/bin/sbt";
+  var pluginDir = "../.c9/plugins/ensime.language.scala";
 
   var handler = module.exports = Object.create(baseHandler);
   var emitter;
@@ -40,6 +47,7 @@ define(function(require, exports, module) {
 
     emitter.on("start", start);
     emitter.on("stop", stop);
+    emitter.on("update", update);
     emitter.on("call", call);
     callback();
   };
@@ -47,9 +55,9 @@ define(function(require, exports, module) {
 
   function start(attach) {
     console.log("Start requested with attach=" + attach);
-    workerUtil.spawn("/home/ubuntu/.nvm/versions/node/v4.1.1/bin/node", {
-      args: ["../.c9/plugins/ensime.language.scala/server/ensime-runner.js",
-        dotEnsime,
+    workerUtil.spawn(node, {
+      args: [pluginDir + "/server/ensime-runner.js",
+        dotEnsime, sbt,
         attach.toString()
       ]
     }, function(err, process) {
@@ -89,6 +97,41 @@ define(function(require, exports, module) {
     ensimeProcess = undefined;
     ensimePort = undefined;
     emitter.emit("stopped", -1);
+  }
+
+  function update() {
+    workerUtil.spawn(node, {
+      args: [pluginDir + "/server/ensime-update.js",
+        dotEnsime, sbt
+      ]
+    }, function(err, process) {
+      if (err) return console.error(err);
+      ensimeProcess = undefined;
+      ensimePort = undefined;
+      console.log("Waiting for ENSIME to update...");
+      emitter.emit("stopped");
+      emitter.emit("updating");
+
+      process.stdout.on("data", function(chunk) {
+        //TODO chunk to message mapping might not always be 1:1
+        console.debug("ENSIME-EVENT: " + chunk);
+        var event = JSON.parse(chunk);
+        if (event.type === "updated") {
+          console.log("ENSIME updated.");
+          emitter.emit("updated");
+        }
+      });
+      process.stderr.on("data", function(chunk) {
+        emitter.emit("log", chunk);
+      });
+      process.on("exit", function(code) {
+        if (code != 0) {
+          emitter.emit("updateFailed", "Code: " + code);
+          console.log("Ensime update failed (code " + code + ")");
+        }
+      });
+    });
+
   }
 
   function call(request) {

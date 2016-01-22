@@ -10,14 +10,15 @@ console.log = console.info = console.debug = console.warn = function(message) {
   if (message) process.stderr.write(message.toString());
 };
 
-if (process.argv.length < 3) {
-  return console.error("Specify the .ensime file as the first command line argument.");
+if (process.argv.length < 4) {
+  return console.error("Specify the .ensime file  and the location of sbt as command line argument.");
 }
 var dotEnsime = process.argv[2];
+var sbt = process.argv[3];
 var allowAttach = false;
-if (process.argv.length > 3) allowAttach = process.argv[3] == "true";
+if (process.argv.length > 4) allowAttach = process.argv[4] == "true";
 
-var ec = new Controller(dotEnsime, "/tmp/ensime");
+var ec = new Controller(dotEnsime, "/tmp/ensime", {sbt: sbt});
 
 ec.handleGeneral = function(msg) {
   process.stdout.write(JSON.stringify(msg));
