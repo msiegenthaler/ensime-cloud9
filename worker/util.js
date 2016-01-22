@@ -15,14 +15,16 @@ define(function(require, exports, module) {
       request: req,
     });
   }
-  function calcPoint(doc, pos) {
+
+  function posToOffset(doc, pos) {
     return doc.getLines(0, pos.row - 1).reduce(function(sf, l) {
       return sf + l.length + 1;
     }, 0) + pos.column;
   }
 
+
   module.exports = {
     executeEnsime: executeEnsime,
-    calcPoint: calcPoint
+    posToOffset: posToOffset
   };
 });

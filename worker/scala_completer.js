@@ -28,7 +28,7 @@ define(function(require, exports, module) {
         file: ".." + handler.path,
         contents: doc.getValue()
       },
-      point: util.calcPoint(doc, pos),
+      point: util.posToOffset(doc, pos),
       maxResults: 30,
       caseSens: false,
       reload: true
