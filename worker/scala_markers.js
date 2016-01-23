@@ -30,6 +30,8 @@ define(function(require, exports, module) {
     }
     else if (event.typehint === "FullTypeCheckCompleteEvent") {
       //Typecheck done, now send the markers to the callbacks
+      emitter.emit("markers", markers);
+      emitter.emit("done");
       pending.forEach(function(p) {
         p();
       });
@@ -88,6 +90,7 @@ define(function(require, exports, module) {
     });
 
     //defer the answer until the typecheck is done.
+    if (pending.length == 0) emitter.emit("working");
     pending.push(function() {
       var ms = markers.filter(function(m) {
         return m.file === file;
