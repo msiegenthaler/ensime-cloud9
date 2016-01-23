@@ -7,7 +7,7 @@ var stdout = {
 
 // keep the stdout clean since we need it for messages.
 console.log = console.info = console.debug = console.warn = function(message) {
-  if (message) process.stderr.write(message.toString());
+  if (message) process.stderr.write(message.toString() + "\n");
 };
 
 if (process.argv.length < 4) {
@@ -18,7 +18,9 @@ var sbt = process.argv[3];
 var allowAttach = false;
 if (process.argv.length > 4) allowAttach = process.argv[4] == "true";
 
-var ec = new Controller(dotEnsime, "/tmp/ensime", {sbt: sbt});
+var ec = new Controller(dotEnsime, "/tmp/ensime", {
+  sbt: sbt
+});
 
 ec.handleGeneral = function(msg) {
   process.stdout.write(JSON.stringify(msg));
@@ -38,7 +40,11 @@ function connect() {
 if (allowAttach) {
   console.info("Checking for running instance...");
   ec.attach(function(err, res) {
-    if (err) return connect(); // start if we cannot attach
+    if (err) {
+      console.info("Attach failed, starting new instance.");
+      return connect(); // start if we cannot attach
+    }
+    console.info("Attach successful, gut a response: " + JSON.stringify(res));
     ec.handleGeneral({
       type: "started",
       port: res.ports.http

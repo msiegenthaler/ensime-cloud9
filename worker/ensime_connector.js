@@ -139,6 +139,7 @@ define(function(require, exports, module) {
       return console.warn("Could not execute call to ENSIME, since it is not running.");
 
     var data = JSON.stringify(request.request);
+      console.debug("ENSIME-REQ:  " + data);
     workerUtil.execFile("curl", {
       args: ["http://localhost:" + ensimePort + "/rpc",
         "-X", "POST", "-H", "Content-Type: application/json", "-s", "-f",
@@ -150,6 +151,7 @@ define(function(require, exports, module) {
       };
       if (err) result.error = "Call failed: " + JSON.stringify(err);
       else result.result = JSON.parse(stdout);
+      console.debug("ENSIME-RESP: " + JSON.stringify(result));
       emitter.emit("call.result", result);
     });
   }
