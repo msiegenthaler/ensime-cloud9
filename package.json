@@ -16,7 +16,7 @@
   },
   "engines": {
     "c9": ">=3.0.0"
-  }
+  },
   "installer": "install.js",
   "categories": ["language", "miscellaneous", "scala"],
   "licenses": ["Apache2"]
