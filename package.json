@@ -3,12 +3,10 @@
   "description": "plugin for Cloud9 providing the Scala language based on ENSIME",
   "version": "0.1.0",
   "author": "Mario Siegenthaler",
-  "contributors": [
-    {
-      "name": "Mario Siegenthaler",
-      "email": "msiegenthaler@inventsoft.ch"
-    }
-  ],
+  "contributors": [{
+    "name": "Mario Siegenthaler",
+    "email": "msiegenthaler@inventsoft.ch"
+  }],
   "repository": {
     "type": "git",
     "url": "git@github.com:msiegenthaler/ensime-c9.git"
@@ -16,6 +14,9 @@
   "plugins": {
     "ensime": {}
   },
-  "categories": ["miscellaneous"],
+  "engines": {
+    "c9": ">=3.0.0"
+  }
+  "categories": ["language", "miscellaneous", "scala"],
   "licenses": ["Apache2"]
 }
