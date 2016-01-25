@@ -172,6 +172,7 @@ define(function(require, exports, module) {
       }, function(err, contents) {
         if (err) return handler(err);
         request.request.fileInfo.contents = contents;
+        //TODO - we probably need to escape unicode sequences like the arrow #5
         call(JSON.stringify(request.request));
       });
     }
