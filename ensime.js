@@ -126,7 +126,8 @@ define(function(require, exports, module) {
                 settings.setDefaults("project/ensime", [
                     ["ensimeFile", "/home/ubuntu/workspace/.ensime"],
                     ["sbt", "/usr/bin/sbt"],
-                    ["noExecAnalysis", false]
+                    ["noExecAnalysis", false],
+                    ["node", "/home/ubuntu/.nvm/versions/node/v4.2.4/bin/node"]
                 ]);
             });
 
@@ -145,6 +146,11 @@ define(function(require, exports, module) {
                             type: "textbox",
                             setting: "project/ensime/@sbt",
                             position: 101
+                        },
+                        "Node Executable": {
+                            type: "textbox",
+                            setting: "project/ensime/@node",
+                            position: 102
                         },
                         "Don't use execAnalysis": {
                             type: "checkbox",
@@ -170,6 +176,7 @@ define(function(require, exports, module) {
                     handler.emit("set_ensime_config", {
                         ensimeFile: settings.get("project/ensime/@ensimeFile"),
                         sbt: settings.get("project/ensime/@sbt"),
+                        node: settings.get("project/ensime/@node"),
                         noExecAnalysis: settings.get("project/ensime/@noExecAnalysis")
                     });
                 }

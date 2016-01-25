@@ -45,6 +45,7 @@ define(function(require, exports, module) {
     emitter.on("set_ensime_config", function(config) {
       dotEnsime = config.ensimeFile;
       sbt = config.sbt || sbt;
+      node = config.node || node;
       pluginDir = config.plugin || pluginDir;
       node = config.node || node;
       noExecAnalysis = config.noExecAnalysis || noExecAnalysis;
