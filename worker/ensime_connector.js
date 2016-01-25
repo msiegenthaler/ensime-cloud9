@@ -23,7 +23,7 @@ define(function(require, exports, module) {
   var workerUtil = require("plugins/c9.ide.language/worker_util");
 
   var node = "/home/ubuntu/.nvm/versions/node/v4.1.1/bin/node";
-  var sbt = "/home/ubuntu/.linuxbrew/bin/sbt";
+  var sbt = "/usr/bin/sbt";
   var pluginDir = "/home/ubuntu/.c9/plugins/ensime.language.scala";
 
   var noExecAnalysis = false;
