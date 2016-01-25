@@ -2,7 +2,7 @@ define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "language", "ui", "commands", "menus", "preferences",
         "settings", "notification.bubble", "installer", "save",
-        "Editor", "editors", "tabManager"
+        "Editor", "editors", "tabManager", "Datagrid"
     ];
     main.provides = ["ensime"];
     return main;
@@ -20,6 +20,7 @@ define(function(require, exports, module) {
         var save = imports.save;
         var editors = imports.editors;
         var tabManager = imports.tabManager;
+        var path = require("path");
 
 
         /***** Initialization *****/
@@ -33,14 +34,17 @@ define(function(require, exports, module) {
         // make sure all deps are installed
         installer.createSession("c9.ide.language.scala", require("./install"));
 
-        var MarkersEditor = require("./markers-editor")(imports, main.consumes);
-        editors.register("ensimeMarkers", "URL Viewer", MarkersEditor, []);
-
         /** Plugin **/
 
         var plugin = new Plugin("Ensime", main.consumes);
+        imports.ensime = plugin;
         var emit = plugin.getEmitter();
 
+        /** Subplugins **/
+        var MarkersEditor = require("./markers-editor")(imports, main.consumes);
+        var markersEditor = editors.register("ensimeMarkers", "URL Viewer", MarkersEditor, []);
+
+        /** implementations of ENSIME Plugin */
         function loadSettings() {
 
             //Commands
@@ -147,6 +151,12 @@ define(function(require, exports, module) {
                     ["node", "/home/ubuntu/.nvm/versions/node/v4.2.4/bin/node"]
                 ]);
             });
+            settings.on("project/ensime", function() {
+                var dotEnsime = settings.get("project/ensime/@ensimeFile");
+                markersEditor.emit("config", {
+                    workspaceDir: path.dirname(dotEnsime)
+                });
+            }, plugin);
 
             // Preferences
             prefs.add({
@@ -214,6 +224,9 @@ define(function(require, exports, module) {
             language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_markers", function(err, handler) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
+                handler.on("markers", function(markers) {
+                    emit("markers", markers);
+                });
             });
         });
         plugin.on("unload", function() {
