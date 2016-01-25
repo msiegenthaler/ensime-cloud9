@@ -1,6 +1,6 @@
 define(function(require, exports, module) {
 
-  var call_id_prefix = "completer";
+  var call_id_prefix = "worker";
   var last_call_id = 0;
 
   function executeEnsime(emitter, req, callback) {

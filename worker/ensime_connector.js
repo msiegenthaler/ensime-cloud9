@@ -24,7 +24,9 @@ define(function(require, exports, module) {
 
   var node = "/home/ubuntu/.nvm/versions/node/v4.1.1/bin/node";
   var sbt = "/home/ubuntu/.linuxbrew/bin/sbt";
-  var pluginDir = "../.c9/plugins/ensime.language.scala";
+  var pluginDir = "/home/ubuntu/.c9/plugins/ensime.language.scala";
+
+  var noExecAnalysis = true;
 
   var handler = module.exports = Object.create(baseHandler);
   var emitter;
@@ -138,21 +140,59 @@ define(function(require, exports, module) {
     if (!ensimePort)
       return console.warn("Could not execute call to ENSIME, since it is not running.");
 
-    var data = JSON.stringify(request.request);
-      console.debug("ENSIME-REQ:  " + data);
-    workerUtil.execFile("curl", {
-      args: ["http://localhost:" + ensimePort + "/rpc",
-        "-X", "POST", "-H", "Content-Type: application/json", "-s", "-f",
-        "--data-binary", data
-      ]
-    }, function(err, stdout, stderr) {
+    console.debug("ENSIME-REQ:  " + JSON.stringify(request));
+
+    function handler(err, data, stderr) {
       var result = {
         id: request.id
       };
-      if (err) result.error = "Call failed: " + JSON.stringify(err);
-      else result.result = JSON.parse(stdout);
+      if (err) {
+        result.error = "Call failed: " + JSON.stringify(err);
+        result.stderr = stderr;
+      }
+      else {
+        if (typeof data === "string") {
+          result.result = JSON.parse(data);
+        }
+        else result.result = data;
+      }
       console.debug("ENSIME-RESP: " + JSON.stringify(result));
       emitter.emit("call.result", result);
-    });
+    }
+
+    if (noExecAnalysis && request.request.fileInfo && request.request.fileInfo.currentContents) {
+      delete request.request.fileInfo.currentContents;
+      workerUtil.readFile(request.request.fileInfo.file, {
+        encoding: "utf-8",
+        allowUnsaved: true
+      }, function(err, contents) {
+        if (err) return handler(err);
+        request.request.fileInfo.contents = contents;
+        call(JSON.stringify(request.request));
+      });
+    }
+    else call(JSON.stringify(request.request));
+
+    function call(data) {
+      if (request.request.fileInfo && request.request.fileInfo.currentContents) {
+        workerUtil.execAnalysis(node, {
+          args: [
+            pluginDir + "/server/ensime-caller.js",
+            ensimePort,
+            data
+          ],
+          mode: "stdin"
+        }, handler);
+      }
+      else {
+        workerUtil.execFile("node", {
+          args: [
+            pluginDir + "/server/ensime-caller.js",
+            ensimePort,
+            data
+          ],
+        }, handler);
+      }
+    }
   }
 });

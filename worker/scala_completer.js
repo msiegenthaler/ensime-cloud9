@@ -26,7 +26,7 @@ define(function(require, exports, module) {
       typehint: "CompletionsReq",
       fileInfo: {
         file: handler.workspaceDir + handler.path,
-        contents: doc.getValue()
+        currentContents: true
       },
       point: util.posToOffset(doc, pos),
       maxResults: 30,

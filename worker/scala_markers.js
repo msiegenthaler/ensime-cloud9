@@ -79,23 +79,31 @@ define(function(require, exports, module) {
 
   handler.analyze = function(doc, ast, options, callback) {
     var file = handler.path;
+    var hadError = false;
+
     executeEnsime({
       typehint: "TypecheckFileReq",
       fileInfo: {
         file: handler.workspaceDir + handler.path,
-        contents: doc
+        currentContents: true
       }
-    }, function() {
+    }, function(err) {
+      if (err) {
+        hadError = true;
+        return callback(err);
+      }
       //ignore, we wait for typecheck to complete
     });
 
     //defer the answer until the typecheck is done.
     if (pending.length == 0) emitter.emit("working");
     pending.push(function() {
-      var ms = markers.filter(function(m) {
-        return m.file === file;
-      });
-      callback(false, ms);
-    });
+        if (hadError) return;
+        var ms = markers.filter(function(m) {
+          return m.file === file;
+        });
+        callback(false, ms);
+      }
+    );
   };
 });
