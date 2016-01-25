@@ -26,7 +26,7 @@ define(function(require, exports, module) {
   var sbt = "/home/ubuntu/.linuxbrew/bin/sbt";
   var pluginDir = "/home/ubuntu/.c9/plugins/ensime.language.scala";
 
-  var noExecAnalysis = true;
+  var noExecAnalysis = false;
 
   var handler = module.exports = Object.create(baseHandler);
   var emitter;
@@ -181,7 +181,10 @@ define(function(require, exports, module) {
             ensimePort,
             data
           ],
-          mode: "stdin"
+          mode: "stdin",
+          json: false,
+          semaphore: request.id,
+          maxCallInterval: 1
         }, handler);
       }
       else {
