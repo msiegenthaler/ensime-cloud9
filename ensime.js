@@ -27,7 +27,7 @@ define(function(require, exports, module) {
         var last_call_id = 0;
 
         // make sure all deps are installed
-        installer.createSession("ensime.language.scala", require("./install"));
+        installer.createSession("c9.ide.language.scala", require("./install"));
 
         /** Plugin **/
 
@@ -149,7 +149,7 @@ define(function(require, exports, module) {
 
         plugin.on("load", function() {
             loadSettings();
-            language.registerLanguageHandler("plugins/ensime.language.scala/worker/ensime_connector", function(err, handler) {
+            language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/ensime_connector", function(err, handler) {
                 if (err) return console.error(err);
                 console.log("ensime-connector initialized.");
                 ensimeConnector = handler;
@@ -165,15 +165,15 @@ define(function(require, exports, module) {
                 registerEnsimeHandlers(handler);
                 emit("connector.ready", handler);
             });
-            language.registerLanguageHandler("plugins/ensime.language.scala/worker/scala_completer", function(err, handler) {
+            language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_completer", function(err, handler) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
             });
-            language.registerLanguageHandler("plugins/ensime.language.scala/worker/scala_outline", function(err, handler) {
+            language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_outline", function(err, handler) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
             });
-            language.registerLanguageHandler("plugins/ensime.language.scala/worker/scala_markers", function(err, handler) {
+            language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_markers", function(err, handler) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
             });
@@ -182,10 +182,10 @@ define(function(require, exports, module) {
             ensimeConnector = null;
             ensimeRunning = false;
             ensimeReady = false;
-            language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/scala_completer");
-            language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/scala_outline");
-            language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/scala_markers");
-            language.unregisterLanguageHandler("plugins/ensime.language.scala/worker/ensime_connector");
+            language.unregisterLanguageHandler("plugins/c9.ide.language.scala/worker/scala_completer");
+            language.unregisterLanguageHandler("plugins/c9.ide.language.scala/worker/scala_outline");
+            language.unregisterLanguageHandler("plugins/c9.ide.language.scala/worker/scala_markers");
+            language.unregisterLanguageHandler("plugins/c9.ide.language.scala/worker/ensime_connector");
         });
         plugin.on("connector.ready", function() {
             startEnsime(true);

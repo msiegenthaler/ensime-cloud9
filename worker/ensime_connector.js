@@ -24,7 +24,7 @@ define(function(require, exports, module) {
 
   var node = "/home/ubuntu/.nvm/versions/node/v4.1.1/bin/node";
   var sbt = "/usr/bin/sbt";
-  var pluginDir = "/home/ubuntu/.c9/plugins/ensime.language.scala";
+  var pluginDir = "/home/ubuntu/.c9/plugins/c9.ide.language.scala";
 
   var noExecAnalysis = false;
 
