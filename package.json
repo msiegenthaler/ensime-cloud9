@@ -1,7 +1,7 @@
 {
   "name": "c9.ide.language.scala",
   "description": "plugin for Cloud9 providing the Scala language based on ENSIME",
-  "version": "0.1.1",
+  "version": "0.1.5",
   "author": "Mario Siegenthaler",
   "contributors": [
     {
@@ -21,7 +21,6 @@
   "engines": {
     "c9": ">=3.0.0"
   },
-  "installer": "install.js",
   "categories": [
     "language",
     "miscellaneous",
