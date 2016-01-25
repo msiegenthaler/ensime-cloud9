@@ -1,7 +1,8 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "language", "ui", "commands", "menus", "preferences",
-        "settings", "notification.bubble", "installer", "save"
+        "settings", "notification.bubble", "installer", "save",
+        "Editor", "editors", "tabManager"
     ];
     main.provides = ["ensime"];
     return main;
@@ -17,6 +18,9 @@ define(function(require, exports, module) {
         var bubble = imports["notification.bubble"];
         var installer = imports.installer;
         var save = imports.save;
+        var editors = imports.editors;
+        var tabManager = imports.tabManager;
+
 
         /***** Initialization *****/
 
@@ -28,6 +32,9 @@ define(function(require, exports, module) {
 
         // make sure all deps are installed
         installer.createSession("c9.ide.language.scala", require("./install"));
+
+        var MarkersEditor = require("./markers-editor")(imports, main.consumes);
+        editors.register("ensimeMarkers", "URL Viewer", MarkersEditor, []);
 
         /** Plugin **/
 
@@ -98,16 +105,26 @@ define(function(require, exports, module) {
                     });
                 }
             }, plugin);
+            commands.addCommand({
+                name: "ensime.showMarkers",
+                exec: function() {
+                    tabManager.openEditor("ensimeMarkers", true, function() {});
+                }
+            }, plugin);
 
 
             // Menus
             menus.setRootMenu("Scala", 550, plugin);
+            menus.addItemByPath("Scala/Errors and Warnings", new ui.item({
+                command: "ensime.showMarkers"
+            }), 100, plugin);
+            menus.addItemByPath("Scala/~", new ui.divider(), 1000, plugin);
             menus.addItemByPath("Scala/Full Typecheck", new ui.item({
                 command: "ensime.typecheck"
-            }), 1000, plugin);
+            }), 1001, plugin);
             menus.addItemByPath("Scala/Unload All", new ui.item({
                 command: "ensime.unloadAll"
-            }), 1001, plugin);
+            }), 1002, plugin);
             menus.addItemByPath("Scala/Connection Info", new ui.item({
                 command: "ensime.connectionInfo"
             }), 1100, plugin);
