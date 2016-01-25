@@ -29,7 +29,17 @@ define(function(require, exports, module) {
     }, {
       "bash": "sudo apt-get -y install sbt"
     }]);
-    
+
+    session.install({
+      "name": "Ensime Plugin for SBT",
+      "description": "Installs SBT to run scala",
+      "cwd": "~/.c9"
+    }, [{
+      "bash": "mkdir -p ~/.sbt/0.13/plugins/"
+    }, {
+      "bash": "echo 'addSbtPlugin(\"org.ensime\" % \"ensime-sbt\" % \"0.3.2\")' >> ~/.sbt/0.13/plugins/ensime.sbt"
+    }]);
+
     session.install({
       "name": "ensime-controller-js",
       "description": "Controls the ensime process on the server.",
@@ -42,5 +52,5 @@ define(function(require, exports, module) {
   };
 
   // version of the installer. Increase this when installer changes and must run again
-  module.exports.version = 3;
+  module.exports.version = 6;
 });
