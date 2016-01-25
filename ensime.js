@@ -1,7 +1,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "language", "ui", "commands", "menus", "preferences",
-        "settings", "notification.bubble"
+        "settings", "notification.bubble", "installer"
     ];
     main.provides = ["ensime"];
     return main;
@@ -15,6 +15,7 @@ define(function(require, exports, module) {
         var settings = imports.settings;
         var prefs = imports.preferences;
         var bubble = imports["notification.bubble"];
+        var installer = imports.installer;
 
         /***** Initialization *****/
 
@@ -23,6 +24,9 @@ define(function(require, exports, module) {
         var ensimeConnector;
         var call_id_prefix = "plugin";
         var last_call_id = 0;
+
+        // make sure all deps are installed
+        installer.createSession("ensime.language.scala", require("./install"));
 
         /** Plugin **/
 
