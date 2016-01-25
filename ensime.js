@@ -1,7 +1,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "language", "ui", "commands", "menus", "preferences",
-        "settings", "notification.bubble", "installer"
+        "settings", "notification.bubble", "installer", "save"
     ];
     main.provides = ["ensime"];
     return main;
@@ -16,6 +16,7 @@ define(function(require, exports, module) {
         var prefs = imports.preferences;
         var bubble = imports["notification.bubble"];
         var installer = imports.installer;
+        var save = imports.save;
 
         /***** Initialization *****/
 
@@ -234,6 +235,9 @@ define(function(require, exports, module) {
             });
             ensimeConnector.on("event", function(event) {
                 handler.emit("event", event);
+            });
+            save.on("afterSave", function(event) {
+                handler.emit("afterSave", event.path);
             });
         }
 

@@ -14,6 +14,7 @@ define(function(require, exports, module) {
     emitter = handler.getEmitter();
     console.log("Scala markers initialized.");
     emitter.on("event", handleEvent);
+    emitter.on("afterSave", handleSave);
     callback();
   };
 
@@ -37,6 +38,19 @@ define(function(require, exports, module) {
       });
       pending = [];
     }
+  }
+
+  function handleSave(path) {
+    //Force a check the file
+    console.info("Forcing typecheck of " + path);
+    executeEnsime({
+      typehint: "TypecheckFileReq",
+      fileInfo: {
+        file: handler.workspaceDir + path,
+      }
+    }, function() {
+      //ignore, we wait for typecheck to complete
+    });
   }
 
   function toMarker(note) {
@@ -98,12 +112,11 @@ define(function(require, exports, module) {
     //defer the answer until the typecheck is done.
     if (pending.length == 0) emitter.emit("working");
     pending.push(function() {
-        if (hadError) return;
-        var ms = markers.filter(function(m) {
-          return m.file === file;
-        });
-        callback(false, ms);
-      }
-    );
+      if (hadError) return;
+      var ms = markers.filter(function(m) {
+        return m.file === file;
+      });
+      callback(false, ms);
+    });
   };
 });
