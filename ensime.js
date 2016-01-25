@@ -1,7 +1,8 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "language", "ui", "commands", "menus", "preferences",
-        "settings", "notification.bubble", "installer", "save"
+        "settings", "notification.bubble", "installer", "save",
+        "Editor", "editors", "tabManager", "Datagrid"
     ];
     main.provides = ["ensime"];
     return main;
@@ -17,6 +18,10 @@ define(function(require, exports, module) {
         var bubble = imports["notification.bubble"];
         var installer = imports.installer;
         var save = imports.save;
+        var editors = imports.editors;
+        var tabManager = imports.tabManager;
+        var path = require("path");
+
 
         /***** Initialization *****/
 
@@ -32,8 +37,14 @@ define(function(require, exports, module) {
         /** Plugin **/
 
         var plugin = new Plugin("Ensime", main.consumes);
+        imports.ensime = plugin;
         var emit = plugin.getEmitter();
 
+        /** Subplugins **/
+        var MarkersEditor = require("./markers-editor")(imports, main.consumes);
+        editors.register("ensimeMarkers", "URL Viewer", MarkersEditor, []);
+
+        /** implementations of ENSIME Plugin */
         function loadSettings() {
 
             //Commands
@@ -98,16 +109,29 @@ define(function(require, exports, module) {
                     });
                 }
             }, plugin);
+            commands.addCommand({
+                name: "ensime.showMarkers",
+                exec: function() {
+                    tabManager.openEditor("ensimeMarkers", true, function() {});
+                }
+            }, plugin);
 
 
             // Menus
             menus.setRootMenu("Scala", 550, plugin);
+            menus.addItemByPath("Scala/Next Error", new ui.item({
+                command: "ensime.jumpToMarker"
+            }), 100, plugin);
+            menus.addItemByPath("Scala/Errors and Warnings", new ui.item({
+                command: "ensime.showMarkers"
+            }), 101, plugin);
+            menus.addItemByPath("Scala/~", new ui.divider(), 1000, plugin);
             menus.addItemByPath("Scala/Full Typecheck", new ui.item({
                 command: "ensime.typecheck"
-            }), 1000, plugin);
+            }), 1001, plugin);
             menus.addItemByPath("Scala/Unload All", new ui.item({
                 command: "ensime.unloadAll"
-            }), 1001, plugin);
+            }), 1002, plugin);
             menus.addItemByPath("Scala/Connection Info", new ui.item({
                 command: "ensime.connectionInfo"
             }), 1100, plugin);
@@ -197,6 +221,9 @@ define(function(require, exports, module) {
             language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_markers", function(err, handler) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
+                handler.on("markers", function(markers) {
+                    emit("markers", markers);
+                });
             });
         });
         plugin.on("unload", function() {
