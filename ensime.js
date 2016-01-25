@@ -124,7 +124,9 @@ define(function(require, exports, module) {
 
             settings.on("read", function(e) {
                 settings.setDefaults("project/ensime", [
-                    ["ensimeFile", "~/workspace/.ensime"]
+                    ["ensimeFile", "/home/ubuntu/workspace/.ensime"],
+                    ["sbt", "/usr/bin/sbt"],
+                    ["noExecAnalysis", false]
                 ]);
             });
 
@@ -138,6 +140,16 @@ define(function(require, exports, module) {
                             type: "textbox",
                             setting: "project/ensime/@ensimeFile",
                             position: 100
+                        },
+                        "SBT Executable": {
+                            type: "textbox",
+                            setting: "project/ensime/@sbt",
+                            position: 101
+                        },
+                        "Don't use execAnalysis": {
+                            type: "checkbox",
+                            setting: "project/ensime/@noExecAnalysis",
+                            position: 110
                         }
                     }
                 }
@@ -156,7 +168,9 @@ define(function(require, exports, module) {
 
                 function sendSettings(handler) {
                     handler.emit("set_ensime_config", {
-                        ensimeFile: settings.get("project/ensime/@ensimeFile")
+                        ensimeFile: settings.get("project/ensime/@ensimeFile"),
+                        sbt: settings.get("project/ensime/@sbt"),
+                        noExecAnalysis: settings.get("project/ensime/@noExecAnalysis")
                     });
                 }
                 settings.on("project/ensime", sendSettings.bind(null, handler), plugin);

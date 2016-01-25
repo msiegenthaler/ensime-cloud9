@@ -22,16 +22,15 @@ define(function(require, exports, module) {
   var baseHandler = require("plugins/c9.ide.language/base_handler");
   var workerUtil = require("plugins/c9.ide.language/worker_util");
 
+  var dotEnsime;
   var node = "/home/ubuntu/.nvm/versions/node/v4.1.1/bin/node";
   var sbt = "/usr/bin/sbt";
   var pluginDir = "/home/ubuntu/.c9/plugins/c9.ide.language.scala";
-
   var noExecAnalysis = false;
 
   var handler = module.exports = Object.create(baseHandler);
   var emitter;
 
-  var dotEnsime;
   var ensimeProcess;
   var ensimePort;
 
@@ -45,6 +44,10 @@ define(function(require, exports, module) {
 
     emitter.on("set_ensime_config", function(config) {
       dotEnsime = config.ensimeFile;
+      sbt = config.sbt || sbt;
+      pluginDir = config.plugin || pluginDir;
+      node = config.node || node;
+      noExecAnalysis = config.noExecAnalysis || noExecAnalysis;
     });
 
     emitter.on("start", start);
