@@ -18,13 +18,15 @@ define(function(require, exports, module) {
                     container: container,
 
                     columns: [{
+                        caption: "",
+                        width: "40",
+                        getHTML: function(marker) {
+                            return `<div class="ace_gutter-layer"><span class="ace_gutter-cell ace_${marker.type}"></span></div>`;
+                        }
+                    }, {
                         caption: "Message",
                         value: "message",
                         width: "60%",
-                    }, {
-                        caption: "Severity",
-                        value: "type",
-                        width: "150",
                     }, {
                         caption: "Location",
                         getText: function(marker) {
