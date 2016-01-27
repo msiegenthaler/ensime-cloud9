@@ -1,6 +1,7 @@
 define(function(require, exports, module) {
 
   var baseHandler = require("plugins/c9.ide.language/base_handler");
+  var workerUtil = require("plugins/c9.ide.language/worker_util");
   var util = require("./util");
 
   var handler = module.exports = Object.create(baseHandler);
@@ -15,6 +16,10 @@ define(function(require, exports, module) {
     console.log("Scala markers initialized.");
     emitter.on("event", handleEvent);
     emitter.on("afterSave", handleSave);
+    emitter.on("rebuild", function() {
+      console.info("Refreshing all markers..");
+      workerUtil.refreshAllMarkers();
+    });
     callback();
   };
 
@@ -71,6 +76,7 @@ define(function(require, exports, module) {
       console.warn("File not in workspace: " + note.file + " (workspaceDir is " + handler.workspaceDir + ")");
       res.file = note.file;
     }
+    res.fileFull = note.file;
     return res;
   }
 

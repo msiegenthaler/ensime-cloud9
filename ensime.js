@@ -1,7 +1,8 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "language", "ui", "commands", "menus", "preferences",
-        "settings", "notification.bubble", "installer", "save"
+        "settings", "notification.bubble", "installer", "save",
+        "Editor", "editors", "tabManager", "Datagrid"
     ];
     main.provides = ["ensime"];
     return main;
@@ -17,6 +18,10 @@ define(function(require, exports, module) {
         var bubble = imports["notification.bubble"];
         var installer = imports.installer;
         var save = imports.save;
+        var editors = imports.editors;
+        var tabManager = imports.tabManager;
+        var path = require("path");
+
 
         /***** Initialization *****/
 
@@ -32,13 +37,21 @@ define(function(require, exports, module) {
         /** Plugin **/
 
         var plugin = new Plugin("Ensime", main.consumes);
+        imports.ensime = plugin;
         var emit = plugin.getEmitter();
 
+        /** Subplugins **/
+        var MarkersEditor = require("./markers-editor")(imports, main.consumes);
+        editors.register("ensimeMarkers", "URL Viewer", MarkersEditor, []);
+
+        /** implementations of ENSIME Plugin */
         function loadSettings() {
 
             //Commands
             commands.addCommand({
-                name: "ensime.start",
+                name: "startEnsime",
+                group: "Scala",
+                description: "Start the resident scala compiler.",
                 isAvailable: function() {
                     return !ensimeRunning;
                 },
@@ -47,7 +60,9 @@ define(function(require, exports, module) {
                 }
             }, plugin);
             commands.addCommand({
-                name: "ensime.stop",
+                name: "stopEnsime",
+                group: "Scala",
+                description: "Stop the scala compiler.",
                 isAvailable: function() {
                     return ensimeRunning;
                 },
@@ -56,37 +71,75 @@ define(function(require, exports, module) {
                 }
             }, plugin);
             commands.addCommand({
-                name: "ensime.update",
+                name: "updateEnsime",
+                group: "Scala",
+                description: "Update the ENSIME backend. Will take some minutes.",
                 exec: function() {
                     updateEnsime();
                 }
             }, plugin);
             commands.addCommand({
-                name: "ensime.typecheck",
+                name: "recompile",
+                group: "Scala",
+                description: "Perform a full typecheck of all Scala files.",
+                bindKey: {
+                    mac: "F8",
+                    win: "F8",
+                    linux: "F8"
+                },
                 isAvailable: function() {
                     return ensimeReady;
                 },
                 exec: function() {
+                    var done = false;
+                    ensimeConnector.on("event", function hdlr(e) {
+                        if (!done && e.typehint === "FullTypeCheckCompleteEvent") {
+                            done = true;
+                            emit("rebuild");
+                            bubble.popup("Recompile completed");
+                            ensimeConnector.off("event", hdlr);
+                        }
+                    });
                     typecheck(function(err) {
-                        if (err)
-                            return bubble.popup("Typecheck All failed: " + err);
+                        if (err) return bubble.popup("Recompile failed: " + err);
+                        if (!done) bubble.popup("Recompiling...");
                     });
                 }
             }, plugin);
             commands.addCommand({
-                name: "ensime.unloadAll",
+                name: "cleanBuild",
+                group: "Scala",
+                description: "Perform a clean build.",
+                bindKey: {
+                    mac: "Shift-F8",
+                    win: "Shift-F8",
+                    linux: "Shift-F8"
+                },
                 isAvailable: function() {
                     return ensimeReady;
                 },
                 exec: function() {
+                    var done = false;
+                    var restarted = false;
+                    ensimeConnector.on("event", function hdlr(e) {
+                        if (e.typehint === "CompilerRestartedEvent") restarted = true;
+                        else if (restarted && !done && e.typehint === "FullTypeCheckCompleteEvent") {
+                            done = true;
+                            ensimeConnector.off("event", hdlr);
+                            emit("rebuild");
+                            bubble.popup("Build completed.");
+                        }
+                    });
                     ensimeUnloadAll(function(err) {
-                        if (err)
-                            return bubble.popup("Could not execute unloadAll: " + err);
+                        if (err) return bubble.popup("Clean build failed: " + err);
+                        if (!done) bubble.popup("Performing a clean build...");
                     });
                 }
             }, plugin);
             commands.addCommand({
-                name: "ensime.connectionInfo",
+                name: "ensimeConnectionInfo",
+                group: "Scala",
+                description: "Show the connection info from ENSIME.",
                 isAvailable: function() {
                     return ensimeReady;
                 },
@@ -98,29 +151,44 @@ define(function(require, exports, module) {
                     });
                 }
             }, plugin);
+            commands.addCommand({
+                name: "showMarkers",
+                group: "Scala",
+                description: "Show the window with all Scala compiler errors and warnings.",
+                exec: function() {
+                    tabManager.openEditor("ensimeMarkers", true, function() {});
+                }
+            }, plugin);
 
 
             // Menus
             menus.setRootMenu("Scala", 550, plugin);
-            menus.addItemByPath("Scala/Full Typecheck", new ui.item({
-                command: "ensime.typecheck"
-            }), 1000, plugin);
-            menus.addItemByPath("Scala/Unload All", new ui.item({
-                command: "ensime.unloadAll"
+            menus.addItemByPath("Scala/Next Error", new ui.item({
+                command: "jumpToMarker"
+            }), 100, plugin);
+            menus.addItemByPath("Scala/Errors and Warnings", new ui.item({
+                command: "showMarkers"
+            }), 101, plugin);
+            menus.addItemByPath("Scala/~", new ui.divider(), 1000, plugin);
+            menus.addItemByPath("Scala/Recompile All", new ui.item({
+                command: "recompile"
             }), 1001, plugin);
-            menus.addItemByPath("Scala/Connection Info", new ui.item({
-                command: "ensime.connectionInfo"
-            }), 1100, plugin);
+            menus.addItemByPath("Scala/Clean", new ui.item({
+                command: "cleanBuild"
+            }), 1002, plugin);
             menus.addItemByPath("Scala/~", new ui.divider(), 2000, plugin);
             menus.addItemByPath("Scala/Start ENSIME", new ui.item({
-                command: "ensime.start"
+                command: "startEnsime"
             }), 10550, plugin);
-            menus.addItemByPath("Scala/Stop ENSIME", new ui.item({
-                command: "ensime.stop"
+            menus.addItemByPath("Scala/Connection Info", new ui.item({
+                command: "ensimeConnectionInfo"
             }), 10551, plugin);
-            menus.addItemByPath("Scala/Update ENSIME", new ui.item({
-                command: "ensime.update"
+            menus.addItemByPath("Scala/Stop ENSIME", new ui.item({
+                command: "stopEnsime"
             }), 10552, plugin);
+            menus.addItemByPath("Scala/Update ENSIME", new ui.item({
+                command: "updateEnsime"
+            }), 10553, plugin);
 
             settings.on("read", function(e) {
                 settings.setDefaults("project/ensime", [
@@ -197,6 +265,9 @@ define(function(require, exports, module) {
             language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_markers", function(err, handler) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
+                handler.on("markers", function(markers) {
+                    emit("markers", markers);
+                });
             });
         });
         plugin.on("unload", function() {
@@ -240,11 +311,6 @@ define(function(require, exports, module) {
             handler.on("updateFailed", function(error) {
                 bubble.popup("ENSIME could not be updated: " + error);
             });
-
-            handler.on("event", function(event) {
-                if (event.typehint == "CompilerRestartedEvent")
-                    bubble.popup("ENSIME is recompiling.");
-            });
         }
 
         function setupConnectorBridge(handler) {
@@ -259,6 +325,9 @@ define(function(require, exports, module) {
             });
             save.on("afterSave", function(event) {
                 handler.emit("afterSave", event.path);
+            });
+            plugin.on("rebuild", function(event) {
+                handler.emit("rebuild", event);
             });
         }
 
