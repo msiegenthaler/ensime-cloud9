@@ -95,7 +95,7 @@ define(function(require, exports, module) {
                     ensimeConnector.on("event", function hdlr(e) {
                         if (!done && e.typehint === "FullTypeCheckCompleteEvent") {
                             done = true;
-                            //TODO refresh all markers in the windows
+                            emit("rebuild");
                             bubble.popup("Recompile completed");
                             ensimeConnector.off("event", hdlr);
                         }
@@ -126,7 +126,7 @@ define(function(require, exports, module) {
                         else if (restarted && !done && e.typehint === "FullTypeCheckCompleteEvent") {
                             done = true;
                             ensimeConnector.off("event", hdlr);
-                            //TODO refresh all markers in the windows
+                            emit("rebuild");
                             bubble.popup("Build completed.");
                         }
                     });
@@ -311,11 +311,6 @@ define(function(require, exports, module) {
             handler.on("updateFailed", function(error) {
                 bubble.popup("ENSIME could not be updated: " + error);
             });
-
-            handler.on("event", function(event) {
-                if (event.typehint == "CompilerRestartedEvent")
-                    bubble.popup("ENSIME is recompiling.");
-            });
         }
 
         function setupConnectorBridge(handler) {
@@ -330,6 +325,9 @@ define(function(require, exports, module) {
             });
             save.on("afterSave", function(event) {
                 handler.emit("afterSave", event.path);
+            });
+            plugin.on("rebuild", function(event) {
+                handler.emit("rebuild", event);
             });
         }
 
