@@ -194,7 +194,7 @@ define(function(require, exports, module) {
                 settings.setDefaults("project/ensime", [
                     ["ensimeFile", "/home/ubuntu/workspace/.ensime"],
                     ["sbt", "/usr/bin/sbt"],
-                    ["noExecAnalysis", false],
+                    ["noExecAnalysis", true],
                     ["node", "/home/ubuntu/.nvm/versions/node/v4.2.4/bin/node"]
                 ]);
             });
