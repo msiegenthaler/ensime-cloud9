@@ -86,8 +86,8 @@ define(function(require, exports, module) {
                             tab.editor.scrollTo(marker.pos.sl, marker.pos.sc);
                     });
                 }
-                table.on("jumpToMarker", function() {
-                    jumpToMarker(table.selectedNode());
+                table.on("afterChoose", function() {
+                    jumpToMarker(table.selectedNode);
                 });
 
                 commands.addCommand({
