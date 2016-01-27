@@ -30,7 +30,7 @@ else
   callEnsime(data);
 
 function callEnsime(data) {
-  var postData = JSON.stringify(data);
+  var postData = new Buffer(JSON.stringify(data));
 
   var req = http.request({
     hostname: "localhost",
@@ -66,6 +66,6 @@ function callEnsime(data) {
     console.error(err);
     process.exit(2);
   });
-  req.write(postData, "utf-8");
+  req.write(postData);
   req.end();
 }
