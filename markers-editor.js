@@ -90,16 +90,17 @@ define(function(require, exports, module) {
                 });
 
                 commands.addCommand({
-                    name: "ensime.jumpToMarker",
+                    name: "jumpToMarker",
                     group: "Scala",
+                    description: "Jump to the next compiler error or warning.",
+                    bindKey: {
+                        mac: "F4",
+                        win: "F4",
+                        linux: "F4"
+                    },
                     isAvailable: function() {
                         return currentMarkers && currentMarkers.length > 0;
                     },
-                    bindKey: {
-                        mac: "F4",
-                        win: "F4"
-                    },
-                    description: "Jump to the next compiler error or warning",
                     exec: function() {
                         if (!currentMarkers || currentMarkers.length == 0) return;
                         jumpToMarker(currentMarkers[0]);
