@@ -3,6 +3,7 @@ define(function(require, exports, module) {
         var Editor = imports.Editor;
         var Datagrid = imports.Datagrid;
         var ensime = imports.ensime;
+        var tabManager = imports.tabManager;
         var path = require("path");
 
 
@@ -22,6 +23,9 @@ define(function(require, exports, module) {
                         width: "40",
                         getHTML: function(marker) {
                             return `<div class="ace_gutter-layer"><span class="ace_gutter-cell ace_${marker.type}"></span></div>`;
+                        },
+                        getText: function(marker) {
+                            return marker.type;
                         }
                     }, {
                         caption: "Message",
@@ -31,11 +35,7 @@ define(function(require, exports, module) {
                         caption: "Location",
                         getText: function(marker) {
                             var name = path.basename(marker.file, ".scala");
-                            var dir;
-                            if (workspaceDir)
-                                dir = path.relative(workspaceDir, marker.file).substr(1);
-                            else
-                                dir = marker.file;
+                            var dir = marker.file.substring(1);
                             var line = marker.pos.sl;
                             return `${name}:${line} (${dir})`;
                         },
@@ -71,6 +71,21 @@ define(function(require, exports, module) {
                         return markers.sort(order);
                     }
                 }, plugin);
+
+                function openMarker() {
+                    var sel = table.selectedNode;
+                    if (!sel) return;
+                    tabManager.open({
+                        path: sel.fileFull,
+                        focus: true,
+                        pane: tabManager.getPanes()[0]
+                    }, function(err, tab) {
+                        if (err) return console.warn("Could not jump to selection " + sel.fileFull);
+                        if (tab.editor && tab.editor.scrollTo)
+                            tab.editor.scrollTo(sel.pos.sl, sel.pos.sc);
+                    });
+                }
+                table.on("afterChoose", openMarker);
 
                 ensime.on("markers", function(markers) {
                     table.setRoot(markers);

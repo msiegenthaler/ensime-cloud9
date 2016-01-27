@@ -71,6 +71,7 @@ define(function(require, exports, module) {
       console.warn("File not in workspace: " + note.file + " (workspaceDir is " + handler.workspaceDir + ")");
       res.file = note.file;
     }
+    res.fileFull = note.file;
     return res;
   }
 
