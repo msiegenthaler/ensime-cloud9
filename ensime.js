@@ -42,7 +42,7 @@ define(function(require, exports, module) {
 
         /** Subplugins **/
         var MarkersEditor = require("./markers-editor")(imports, main.consumes);
-        var markersEditor = editors.register("ensimeMarkers", "URL Viewer", MarkersEditor, []);
+        editors.register("ensimeMarkers", "URL Viewer", MarkersEditor, []);
 
         /** implementations of ENSIME Plugin */
         function loadSettings() {
@@ -119,9 +119,12 @@ define(function(require, exports, module) {
 
             // Menus
             menus.setRootMenu("Scala", 550, plugin);
+            menus.addItemByPath("Scala/Next Error", new ui.item({
+                command: "ensime.jumpToMarker"
+            }), 100, plugin);
             menus.addItemByPath("Scala/Errors and Warnings", new ui.item({
                 command: "ensime.showMarkers"
-            }), 100, plugin);
+            }), 101, plugin);
             menus.addItemByPath("Scala/~", new ui.divider(), 1000, plugin);
             menus.addItemByPath("Scala/Full Typecheck", new ui.item({
                 command: "ensime.typecheck"
@@ -151,12 +154,6 @@ define(function(require, exports, module) {
                     ["node", "/home/ubuntu/.nvm/versions/node/v4.2.4/bin/node"]
                 ]);
             });
-            settings.on("project/ensime", function() {
-                var dotEnsime = settings.get("project/ensime/@ensimeFile");
-                markersEditor.emit("config", {
-                    workspaceDir: path.dirname(dotEnsime)
-                });
-            }, plugin);
 
             // Preferences
             prefs.add({

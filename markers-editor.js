@@ -4,13 +4,14 @@ define(function(require, exports, module) {
         var Datagrid = imports.Datagrid;
         var ensime = imports.ensime;
         var tabManager = imports.tabManager;
+        var commands = imports.commands;
         var path = require("path");
 
 
         function MarkersEditor() {
             console.log("initializing Scala MarkersEditor.");
 
-            var workspaceDir = undefined;
+            var currentMarkers = [];
 
             var plugin = new Editor("Ensime", consumes, []);
             plugin.on("draw", function(e) {
@@ -72,28 +73,43 @@ define(function(require, exports, module) {
                     }
                 }, plugin);
 
-                function openMarker() {
-                    var sel = table.selectedNode;
-                    if (!sel) return;
+                function jumpToMarker(marker) {
+                    if (!marker) return;
                     tabManager.open({
-                        path: sel.fileFull,
+                        path: marker.fileFull,
                         focus: true,
                         pane: tabManager.getPanes()[0]
                     }, function(err, tab) {
-                        if (err) return console.warn("Could not jump to selection " + sel.fileFull);
+                        if (err) return console.warn("Could not jump to selection " + marker.fileFull);
                         if (tab.editor && tab.editor.scrollTo)
-                            tab.editor.scrollTo(sel.pos.sl, sel.pos.sc);
+                            tab.editor.scrollTo(marker.pos.sl, marker.pos.sc);
                     });
                 }
-                table.on("afterChoose", openMarker);
+                table.on("jumpToMarker", function() {
+                    jumpToMarker(table.selectedNode());
+                });
+
+                commands.addCommand({
+                    name: "ensime.jumpToMarker",
+                    group: "Scala",
+                    isAvailable: function() {
+                        return currentMarkers && currentMarkers.length > 0;
+                    },
+                    bindKey: {
+                        mac: "F4",
+                        win: "F4"
+                    },
+                    description: "Jump to the next compiler error or warning",
+                    exec: function() {
+                        if (!currentMarkers || currentMarkers.length == 0) return;
+                        jumpToMarker(currentMarkers[0]);
+                    }
+                }, plugin);
 
                 ensime.on("markers", function(markers) {
+                    currentMarkers = markers;
                     table.setRoot(markers);
                 }, plugin);
-            });
-
-            plugin.on("config", function(config) {
-                workspaceDir = config.workspaceDir;
             });
 
             plugin.on("load", function() {
