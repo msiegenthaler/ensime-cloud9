@@ -16,20 +16,13 @@ var data = JSON.parse(inData);
 if (data.fileInfo && data.fileInfo.currentContents) {
   delete data.fileInfo.currentContents;
 
-  // if (process.argv.length < 5) {
-  // return process.exit(4);
-  // }
-  // var c = fs.readFileSync(process.argv[4], "utf-8");
-  // data.fileInfo.contents = c;
-
   var chunks = [];
   process.stdin.on('data', function(chunk) {
     chunks.push(chunk);
   });
   process.stdin.on('end', function() {
     var body = Buffer.concat(chunks);
-    data.fileInfo.contents = body.toString("ascii");
-    fs.writeFileSync("/tmp/bla", JSON.stringify(data), "utf-8");
+    data.fileInfo.contents = body.toString("utf-8");
     callEnsime(data);
   });
 }
