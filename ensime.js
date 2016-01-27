@@ -91,9 +91,18 @@ define(function(require, exports, module) {
                     return ensimeReady;
                 },
                 exec: function() {
+                    var done = false;
+                    ensimeConnector.on("event", function hdlr(e) {
+                        if (!done && e.typehint === "FullTypeCheckCompleteEvent") {
+                            done = true;
+                            //TODO refresh all markers in the windows
+                            bubble.popup("Recompile completed");
+                            ensimeConnector.off("event", hdlr);
+                        }
+                    });
                     typecheck(function(err) {
                         if (err) return bubble.popup("Recompile failed: " + err);
-                        bubble.popup("Recompiling...");
+                        if (!done) bubble.popup("Recompiling...");
                     });
                 }
             }, plugin);
@@ -110,9 +119,20 @@ define(function(require, exports, module) {
                     return ensimeReady;
                 },
                 exec: function() {
+                    var done = false;
+                    var restarted = false;
+                    ensimeConnector.on("event", function hdlr(e) {
+                        if (e.typehint === "CompilerRestartedEvent") restarted = true;
+                        else if (restarted && !done && e.typehint === "FullTypeCheckCompleteEvent") {
+                            done = true;
+                            ensimeConnector.off("event", hdlr);
+                            //TODO refresh all markers in the windows
+                            bubble.popup("Build completed.");
+                        }
+                    });
                     ensimeUnloadAll(function(err) {
                         if (err) return bubble.popup("Clean build failed: " + err);
-                        bubble.popup("Performing a clean build...");
+                        if (!done) bubble.popup("Performing a clean build...");
                     });
                 }
             }, plugin);
