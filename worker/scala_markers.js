@@ -24,18 +24,21 @@ define(function(require, exports, module) {
   };
 
   var markers = [];
+  var updatingMarkers = [];
   var pending = [];
 
   function handleEvent(event) {
     if (event.typehint === "NewScalaNotesEvent") {
-      if (event.isFull) markers = [];
-      markers = markers.concat(event.notes.map(toMarker));
+      if (event.isFull) updatingMarkers = [];
+      updatingMarkers = updatingMarkers.concat(event.notes.map(toMarker));
     }
     else if (event.typehint === "ClearAllScalaNotesEvent") {
-      markers = [];
+      updatingMarkers = [];
     }
     else if (event.typehint === "FullTypeCheckCompleteEvent") {
       //Typecheck done, now send the markers to the callbacks
+      markers = updatingMarkers;
+      updatingMarkers = [];
       emitter.emit("markers", markers);
       emitter.emit("done");
       pending.forEach(function(p) {
@@ -98,6 +101,8 @@ define(function(require, exports, module) {
   }
 
   handler.analyze = function(doc, ast, options, callback) {
+    if (options.minimalAnalysis) return callback(); //else we do everything twice
+
     var file = handler.path;
     var hadError = false;
 
