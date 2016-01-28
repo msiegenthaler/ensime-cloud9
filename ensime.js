@@ -120,10 +120,15 @@ define(function(require, exports, module) {
                 },
                 exec: function() {
                     var done = false;
+                    var recompiling = false;
                     var restarted = false;
                     ensimeConnector.on("event", function hdlr(e) {
-                        if (e.typehint === "CompilerRestartedEvent") restarted = true;
-                        else if (restarted && !done && e.typehint === "FullTypeCheckCompleteEvent") {
+                        if (!recompiling && e.typehint === "CompilerRestartedEvent") {
+                            recompiling = true;
+                            typecheck(function() {
+                                restarted = true;
+                            });
+                        } else if (restarted && !done && e.typehint === "FullTypeCheckCompleteEvent") {
                             done = true;
                             ensimeConnector.off("event", hdlr);
                             emit("rebuild");
