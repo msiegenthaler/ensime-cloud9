@@ -44,7 +44,7 @@ define(function(require, exports, module) {
     var pos = posFor(doc, obj);
     var result = {
       icon: iconFor(obj.keyword),
-      name: obj.name,
+      name: convertName(obj.name),
       pos: pos,
       displayPos: pos
     };
@@ -55,6 +55,15 @@ define(function(require, exports, module) {
         return convert(doc, e);
       });
     return result;
+  }
+
+  var scalaUnicodeRegex = /(\$u[0-9A-Z]{4})/g;
+
+  function convertName(name) {
+    return name.replace(scalaUnicodeRegex, function(x) {
+      var code = parseInt(x.substring(2), 16);
+      return String.fromCodePoint(code);
+    });
   }
 
   function posFor(doc, obj) {
