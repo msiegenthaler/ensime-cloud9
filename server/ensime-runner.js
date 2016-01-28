@@ -22,8 +22,12 @@ var ec = new Controller(dotEnsime, "/tmp/ensime", {
   sbt: sbt
 });
 
+process.stdout.setEncoding("ascii");
+
 ec.handleGeneral = function(msg) {
-  process.stdout.write(JSON.stringify(msg));
+  var string = JSON.stringify(msg);
+  var buffer = new Buffer(string, "binary");
+  process.stdout.write(buffer.toString("base64") + "|");
 };
 
 function connect() {

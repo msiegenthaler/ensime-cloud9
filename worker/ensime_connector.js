@@ -72,10 +72,17 @@ define(function(require, exports, module) {
       console.log("Waiting for ENSIME to start...");
       emitter.emit("starting");
 
-      process.stdout.on("data", function(chunk) {
-        //TODO chunk to message mapping might not always be 1:1
-        console.debug("ENSIME-EVENT: " + chunk);
-        var event = JSON.parse(chunk);
+      var buffer = "";
+
+      function receivedData(chunk) {
+        buffer += chunk;
+        var delim = buffer.indexOf("|");
+        if (delim == -1) return;
+
+        var decoded = window.atob(buffer.substr(0, delim));
+        buffer = buffer.substr(delim + 1);
+        console.debug("ENSIME-EVENT: " + decoded);
+        var event = JSON.parse(decoded);
         if (event.type === "started") {
           console.log("ENSIME started.");
           ensimePort = event.port;
@@ -84,7 +91,10 @@ define(function(require, exports, module) {
         else {
           emitter.emit("event", event);
         }
-      });
+        receivedData("");
+      }
+
+      process.stdout.on("data", receivedData);
       process.stderr.on("data", function(chunk) {
         emitter.emit("log", chunk);
       });
