@@ -7,7 +7,8 @@ Provides advanced Scala language features based on *ensime*.
 Supported features
 ------------------
 - Code completions
-- Show compile errors and warnings as markers
+- Show compile errors and warnings as markers in the editors
+- Show all compile errors and warnings in a special tab and allow to cycle though it.
 - Outline
 
 
