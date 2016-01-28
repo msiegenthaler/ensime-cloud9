@@ -25,7 +25,6 @@ define(function(require, exports, module) {
 
   var markers = [];
   var updatingMarkers = [];
-  var pending = [];
 
   function handleEvent(event) {
     if (event.typehint === "NewScalaNotesEvent") {
@@ -40,11 +39,6 @@ define(function(require, exports, module) {
       markers = updatingMarkers;
       updatingMarkers = [];
       emitter.emit("markers", markers);
-      emitter.emit("done");
-      pending.forEach(function(p) {
-        p();
-      });
-      pending = [];
     }
   }
 
@@ -101,11 +95,13 @@ define(function(require, exports, module) {
   }
 
   handler.analyze = function(doc, ast, options, callback) {
-    if (options.minimalAnalysis) return callback(); //else we do everything twice
-
     var file = handler.path;
-    var hadError = false;
+    var ms = markers.filter(function(m) {
+      return m.file === file;
+    });
+    callback(false, ms);
 
+    if (options.minimalAnalysis) return; //else we do everything twice
     executeEnsime({
       typehint: "TypecheckFileReq",
       fileInfo: {
@@ -113,21 +109,9 @@ define(function(require, exports, module) {
         currentContents: true
       }
     }, function(err) {
-      if (err) {
-        hadError = true;
-        return callback(err);
-      }
+      if (err)
+        console.warn("Error executing typecheck for " + file + ": " + err);
       //ignore, we wait for typecheck to complete
-    });
-
-    //defer the answer until the typecheck is done.
-    if (pending.length == 0) emitter.emit("working");
-    pending.push(function() {
-      if (hadError) return;
-      var ms = markers.filter(function(m) {
-        return m.file === file;
-      });
-      callback(false, ms);
     });
   };
 });
