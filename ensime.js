@@ -177,7 +177,10 @@ define(function(require, exports, module) {
             }), 100, plugin);
             menus.addItemByPath("Scala/Errors and Warnings", new ui.item({
                 command: "showMarkers"
-            }), 101, plugin);
+            }), 110, plugin);
+            menus.addItemByPath("Scala/Format", new ui.item({
+                command: "formatcode"
+            }), 120, plugin);
             menus.addItemByPath("Scala/~", new ui.divider(), 1000, plugin);
             menus.addItemByPath("Scala/Recompile All", new ui.item({
                 command: "recompile"
