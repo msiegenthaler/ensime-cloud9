@@ -299,7 +299,10 @@ define(function(require, exports, module) {
                 //TODO workaround for error in worker.codeFormat
                 handler.on("code_format", function(e) {
                     var tab = tabManager.findTab(e.path);
-                    if (tab) tab.document.value = e.value;
+                    if (tab) {
+                        tab.document.value = e.value;
+                        tab.editor.ace.selection.clearSelection();
+                    }
                 });
             });
         });
