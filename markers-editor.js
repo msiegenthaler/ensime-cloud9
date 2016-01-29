@@ -43,7 +43,7 @@ define(function(require, exports, module) {
             var emit = plugin.getEmitter();
 
             var table;
-            var current;
+            var current = {};
 
             plugin.on("draw", function(e) {
                 var container = e.htmlNode;
@@ -110,6 +110,7 @@ define(function(require, exports, module) {
                         if (current.position >= current.markers.length) current.position = 0;
                         jumpToMarker(current.markers[current.position]);
                         table.select(current.markers[current.position]);
+                        table.scrollIntoView(current.markers[current.position]);
                     }
                 }, plugin);
             });
@@ -118,7 +119,6 @@ define(function(require, exports, module) {
                 var doc = e.doc;
                 doc.title = "Errors and Warnings";
                 doc.meta.ensimeMarkersEditor = true;
-                var current = doc.getState();
 
                 ensime.on("markers", function(markers) {
                     markers = sortMarkers(markers);
@@ -139,10 +139,6 @@ define(function(require, exports, module) {
                 }, plugin);
 
                 emit.sticky("refreshMarkers");
-            });
-
-            plugin.on("documentActivate", function(e) {
-                current = e.doc.getState();
             });
 
             plugin.freezePublicAPI({});
