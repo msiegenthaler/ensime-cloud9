@@ -10,6 +10,7 @@ Supported features
 - Show compile errors and warnings as markers in the editors
 - Show all compile errors and warnings in a special tab and allow to cycle though it.
 - Outline
+- Code formatter (using scalariform)
 
 
 Installation
@@ -29,3 +30,5 @@ Installation
 References
 ----------
 - https://github.com/ensime/ensime-server
+- http://scala-ide.org/scalariform/
+- http://c9.io/
