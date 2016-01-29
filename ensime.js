@@ -20,7 +20,6 @@ define(function(require, exports, module) {
         var save = imports.save;
         var editors = imports.editors;
         var tabManager = imports.tabManager;
-        var path = require("path");
 
 
         /***** Initialization *****/
@@ -128,7 +127,8 @@ define(function(require, exports, module) {
                             typecheck(function() {
                                 restarted = true;
                             });
-                        } else if (restarted && !done && e.typehint === "FullTypeCheckCompleteEvent") {
+                        }
+                        else if (restarted && !done && e.typehint === "FullTypeCheckCompleteEvent") {
                             done = true;
                             ensimeConnector.off("event", hdlr);
                             emit("rebuild");
@@ -161,7 +161,10 @@ define(function(require, exports, module) {
                 group: "Scala",
                 description: "Show the window with all Scala compiler errors and warnings.",
                 exec: function() {
-                    tabManager.openEditor("ensimeMarkers", true, function() {});
+                    var e = tabManager.openEditor("ensimeMarkers", true, function() {});
+                    e.editor.on("refreshMarkers", function() {
+                        emit("refreshMarkers");
+                    }, plugin);
                 }
             }, plugin);
 
@@ -273,8 +276,12 @@ define(function(require, exports, module) {
                 handler.on("markers", function(markers) {
                     emit("markers", markers);
                 });
+                plugin.on("refreshMarkers", function() {
+                    handler.emit("refreshMarkers");
+                });
             });
         });
+
         plugin.on("unload", function() {
             ensimeConnector = null;
             ensimeRunning = false;
