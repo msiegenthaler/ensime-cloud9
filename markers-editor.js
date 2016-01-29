@@ -39,13 +39,15 @@ define(function(require, exports, module) {
         function MarkersEditor() {
             console.log("initializing Scala MarkersEditor.");
 
-            var currentMarkers = [];
-            var currentPos = -1;
-
             var plugin = new Editor("Ensime", consumes, []);
+            var emit = plugin.getEmitter();
+
+            var table;
+            var current;
+
             plugin.on("draw", function(e) {
                 var container = e.htmlNode;
-                var table = new Datagrid({
+                table = new Datagrid({
                     container: container,
 
                     columns: [{
@@ -100,23 +102,30 @@ define(function(require, exports, module) {
                         linux: "F4"
                     },
                     isAvailable: function() {
-                        return currentMarkers && currentMarkers.length > 0;
+                        return current && current.markers && current.markers.length > 0;
                     },
                     exec: function() {
-                        if (!currentMarkers || currentMarkers.length == 0) return;
-                        currentPos++;
-                        if (currentPos >= currentMarkers.length) currentPos = 0;
-                        jumpToMarker(currentMarkers[currentPos]);
-                        table.select(currentMarkers[currentPos]);
+                        if (!current.markers || current.markers.length == 0) return;
+                        current.position++;
+                        if (current.position >= current.markers.length) current.position = 0;
+                        jumpToMarker(current.markers[current.position]);
+                        table.select(current.markers[current.position]);
                     }
                 }, plugin);
+            });
+
+            plugin.on("documentLoad", function(e) {
+                var doc = e.doc;
+                doc.title = "Errors and Warnings";
+                doc.meta.ensimeMarkersEditor = true;
+                var current = doc.getState();
 
                 ensime.on("markers", function(markers) {
                     markers = sortMarkers(markers);
-                    if (currentPos > -1 && currentPos < currentMarkers.length) {
+                    if (current.position > -1 && current.position < current.markers.length) {
                         //try to find our last position in the new markers
-                        var c = currentMarkers[currentPos];
-                        currentPos = markers.findIndex(function(e) {
+                        var c = current.markers[current.position];
+                        current.position = markers.findIndex(function(e) {
                             return c.fileFull === e.fileFull &&
                                 c.message === e.message &&
                                 c.type === e.type &&
@@ -124,20 +133,16 @@ define(function(require, exports, module) {
                                 c.pos.sc === e.pos.sc;
                         });
                     }
-                    else currentPos = -1;
-                    currentMarkers = markers;
+                    else current.position = -1;
+                    current.markers = markers;
                     table.setRoot(markers);
                 }, plugin);
+
+                emit.sticky("refreshMarkers");
             });
 
-            plugin.on("load", function() {
-                console.info("Loading Scala Markers Editor...");
-            });
-
-            plugin.on("documentLoad", function(e) {
-                var doc = e.doc;
-                doc.title = "Errors and Warnings";
-                doc.meta.ensimeMarkersEditor = true;
+            plugin.on("documentActivate", function(e) {
+                current = e.doc.getState();
             });
 
             plugin.freezePublicAPI({});

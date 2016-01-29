@@ -7,6 +7,10 @@ define(function(require, exports, module) {
   var handler = module.exports = Object.create(baseHandler);
   var emitter;
 
+  var markers = [];
+  var updatingMarkers = [];
+  var pending = [];
+
   handler.handlesLanguage = function(language) {
     return language === "scala";
   };
@@ -20,12 +24,16 @@ define(function(require, exports, module) {
       console.info("Refreshing all markers..");
       workerUtil.refreshAllMarkers();
     });
+    emitter.on("refreshMarkers", function() {
+      emitter.emit("markers", markers);
+      workerUtil.refreshAllMarkers();
+    });
+    if (!handler.workspaceDir) {
+      handler.workspaceDir = "/home/ubuntu/workspace";
+      console.warn("WorkspaceDir was undefined in the language handler - setting it to " + handler.workspaceDir);
+    }
     callback();
   };
-
-  var markers = [];
-  var updatingMarkers = [];
-  var pending = [];
 
   function handleEvent(event) {
     if (event.typehint === "NewScalaNotesEvent") {
@@ -57,7 +65,7 @@ define(function(require, exports, module) {
         file: handler.workspaceDir + path,
       }
     }, function() {
-      //ignore, we wait for typecheck to complete
+      //we'll wait for typecheck to complete
     });
   }
 
@@ -101,10 +109,21 @@ define(function(require, exports, module) {
   }
 
   handler.analyze = function(doc, ast, options, callback) {
-    if (options.minimalAnalysis) return callback(); //else we do everything twice
-
     var file = handler.path;
     var hadError = false;
+
+    function callCallback() {
+      if (hadError) return;
+      var ms = markers.filter(function(m) {
+        return m.file === file;
+      });
+      callback(false, ms);
+    }
+
+    if (options.minimalAnalysis) {
+      // fast track with the current state of the markers
+      return callCallback();
+    }
 
     executeEnsime({
       typehint: "TypecheckFileReq",
@@ -114,20 +133,15 @@ define(function(require, exports, module) {
       }
     }, function(err) {
       if (err) {
+        workerUtil.showError("Problem updating the markers");
         hadError = true;
         return callback(err);
       }
-      //ignore, we wait for typecheck to complete
+      //we'll wait for typecheck to complete
     });
 
     //defer the answer until the typecheck is done.
     if (pending.length == 0) emitter.emit("working");
-    pending.push(function() {
-      if (hadError) return;
-      var ms = markers.filter(function(m) {
-        return m.file === file;
-      });
-      callback(false, ms);
-    });
+    pending.push(callCallback);
   };
 });
