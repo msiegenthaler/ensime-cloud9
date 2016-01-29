@@ -20,6 +20,10 @@ define(function(require, exports, module) {
       console.info("Refreshing all markers..");
       workerUtil.refreshAllMarkers();
     });
+    if (!handler.workspaceDir) {
+      handler.workspaceDir = "/home/ubuntu/workspace";
+      console.warn("WorkspaceDir was undefined in the language handler - setting it to " + handler.workspaceDir);
+    }
     callback();
   };
 
