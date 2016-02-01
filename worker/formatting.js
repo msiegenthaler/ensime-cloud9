@@ -63,7 +63,8 @@ define(function(require, exports, module) {
       }
       return results;
     })();
-    return p.join(", ");
+    if (paramSection.isImplicit) return "implicit " + p.join(", ");
+    else return p.join(", ");
   };
 
   formatParamSections = function(paramSections) {
@@ -85,14 +86,26 @@ define(function(require, exports, module) {
   scalaPackageMatcher = /scala\.([\s\S]*)/;
 
   formatType = function(theType) {
-    var formattedTypeArgs, i, j, name, o, params, ref, result, scalaPackage, typeArg, typeArgs;
+    var formattedTypeArgs, i, j, name, o, params, result, scalaPackage, typeArg, typeArgs;
     if (theType.typehint === "ArrowTypeInfo") {
       return formatParamSections(theType.paramSections) + " ⇒ " + formatType(theType.resultType);
     }
     else if (theType.typehint === "BasicTypeInfo") {
       typeArgs = theType.typeArgs;
       scalaPackage = scalaPackageMatcher.exec(theType.fullName);
-      name = scalaPackage ? scalaPackage[1] : (ref = theType.declAs.typehint) === 'Class' || ref === 'Trait' || ref === 'Object' || ref === 'Interface' ? theType.fullName : theType.name;
+      if (scalaPackage) name = scalaPackage[1];
+      else {
+        switch (theType.declAs.typehint) {
+          case 'Class':
+          case 'Trait':
+          case 'Object':
+          case 'Interface':
+            name = theType.fullName.replace(/\$\$/, ".").replace(/\$/, "").replace(/^<empty>./, "");
+            break;
+          default:
+            name = theType.name;
+        }
+      }
       if (!typeArgs || typeArgs.length === 0) {
         return name;
       }
@@ -107,15 +120,15 @@ define(function(require, exports, module) {
           return results;
         })();
         if (theType.fullName === 'scala.<byname>') {
-          return "=> " + formattedTypeArgs.join(", ");
+          return "⇒ " + formattedTypeArgs.join(", ");
         }
         else if (theType.fullName === "scala.Function1") {
           i = formattedTypeArgs[0], o = formattedTypeArgs[1];
-          return i + " => " + o;
+          return i + " ⇒ " + o;
         }
         else if (functionMatcher.test(theType.fullName)) {
           params = 2 <= formattedTypeArgs.length ? slice.call(formattedTypeArgs, 0, j = formattedTypeArgs.length - 1) : (j = 0, []), result = formattedTypeArgs[j++];
-          return "(" + (params.join(", ")) + ") => " + result;
+          return "(" + (params.join(", ")) + ") ⇒ " + result;
         }
         else {
           return name + ("[" + (formattedTypeArgs.join(", ")) + "]");
