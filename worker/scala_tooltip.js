@@ -92,7 +92,20 @@ define(function(require, exports, module) {
       console.info(docUri)
 
       var hint = "";
-      var signatures = [];
+
+      function done(err) {
+        if (err) return console.warn(err);
+        callback({
+          hint: hint,
+          pos: {
+            sl: pos.row,
+            sc: pos.column,
+            el: pos.row,
+            ec: pos.column
+          }
+        });
+      }
+
       if (symbol.typehint === "SymbolInfo") {
         hint += util.escapeHtml(symbol.name);
         hint += ": ";
@@ -100,20 +113,30 @@ define(function(require, exports, module) {
       }
 
       if (docUri.typehint === "StringResponse") {
-        if (hint !== "") hint += "<br>";
-        hint += `<a href=${docUri.text}>Show Documentation<a>`;
-      }
+        var url = docUri.text;
 
-      callback({
-        hint: hint,
-        signatures: signatures,
-        pos: {
-          sl: pos.row,
-          sc: pos.column,
-          el: pos.row,
-          ec: pos.column
-        }
-      });
+        //TODO config plugindir and node
+        workerUtil.execFile("node", {
+          cwd: "/home/ubuntu/workspace",
+          args: [
+            "/home/ubuntu/.c9/plugins/c9.ide.language.scala/server/doc-fetcher.js",
+            url,
+            38871
+          ]
+        }, function(err, result, stderr) {
+          if (err) return done(err);
+
+          if (hint !== "") hint += "<br>";
+          hint += "<h4>Documentation</h4>";
+          hint += result;
+          // hint += "<iframe>"+result+"</iframe>";
+          done();
+          // console.warn(stdout)
+          // hint += `<a onclick="require('ext/preview/preview').preview('${url}'); return false;" href="${url}" target="c9doc" style="pointer-events: auto">(more)</a>`;
+        });
+      }
+      else
+        done();
     });
   };
 });
