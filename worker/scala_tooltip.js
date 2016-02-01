@@ -3,6 +3,7 @@ define(function(require, exports, module) {
   var baseHandler = require("plugins/c9.ide.language/base_handler");
   var workerUtil = require("plugins/c9.ide.language/worker_util");
   var util = require("./util");
+  var formatting = require("./formatting")
 
   var handler = module.exports = Object.create(baseHandler);
   var emitter;
@@ -30,46 +31,87 @@ define(function(require, exports, module) {
     util.executeEnsime(emitter, req, callback);
   }
 
+  /** Do multiple concurrent ensime calls. */
+  function executeEnsimes(reqs, callback) {
+    var done = false;
+    var results = [];
+    var called = [];
+
+    function cb(index) {
+      return function(err, r) {
+        if (done || called[index]) return;
+        if (err) {
+          done = true;
+          return callback(err);
+        }
+        results[index] = r;
+        called[index] = true;
+        for (var i = 0; i < reqs.length; i++) {
+          if (!called[i]) return;
+        }
+        callback(false, results);
+      };
+    }
+    reqs.forEach(function(req, i) {
+      executeEnsime(req, cb(i));
+    });
+  }
+
+
   handler.getTooltipRegex = function() {
     //TODO
     return null;
   };
 
-
   handler.tooltip = function(doc, ast, pos, options, callback) {
     console.info("Requesting tooltip for " + handler.path + ":" + JSON.stringify(pos));
 
-    executeEnsime({
+    var fileinfo = {
+      file: handler.workspaceDir + handler.path,
+      currentContents: true
+    };
+    var point = util.posToOffset(doc, pos);
+    var reqs = [{
+      typehint: "SymbolAtPointReq",
+      file: fileinfo,
+      point: point
+    }, {
       typehint: "DocUriAtPointReq",
-      file: {
-        file: handler.workspaceDir + handler.path,
-        currentContents: true
-      },
+      file: fileinfo,
       point: {
-        from: util.posToOffset(doc, pos),
-        to: util.posToOffset(doc, pos)
+        from: point,
+        to: point
       }
-    }, function(err, result) {
-      if (err) {
-        console.error("Could not get the tooltip: " + err);
-        return callback();
+    }];
+    executeEnsimes(reqs, function(err, results) {
+      if (err) return callback(err);
+      var symbol = results[0];
+      var docUri = results[1];
+
+      console.info(symbol)
+      console.info(docUri)
+
+      var hint = "";
+      var signatures = [];
+      if (symbol.typehint === "SymbolInfo") {
+        hint += symbol.name;
+        hint += ": ";
+        hint += formatting.formatType(symbol.type);
       }
-      if (result.typehint === "StringResponse") {
-        console.warn(result.text);
+
+      if (docUri.typehint === "StringResponse") {
+        if (hint !== "") hint += "<br>";
+        hint += `<a href=${docUri.text}>Show Documentation<a>`;
       }
-      else {
-        console.warn("no doc");
-      }
+
       callback({
-        hint: "This is a <b>tooltip</b>",
-        // signatures: [{
-        // name: "Test"
-        // }],
+        hint: hint,
+        signatures: signatures,
         pos: {
-          sl: cursorPos.row,
-          sc: cursorPos.column,
-          el: cursorPos.row,
-          ec: cursorPos.column
+          sl: pos.row,
+          sc: pos.column,
+          el: pos.row,
+          ec: pos.column
         }
       });
     });

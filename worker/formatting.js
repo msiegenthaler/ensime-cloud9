@@ -87,7 +87,7 @@ define(function(require, exports, module) {
   formatType = function(theType) {
     var formattedTypeArgs, i, j, name, o, params, ref, result, scalaPackage, typeArg, typeArgs;
     if (theType.typehint === "ArrowTypeInfo") {
-      return formatParamSections(theType.paramSections) + ": " + formatType(theType.resultType);
+      return formatParamSections(theType.paramSections) + " ⇒ " + formatType(theType.resultType);
     }
     else if (theType.typehint === "BasicTypeInfo") {
       typeArgs = theType.typeArgs;
