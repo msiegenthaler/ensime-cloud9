@@ -94,9 +94,9 @@ define(function(require, exports, module) {
       var hint = "";
       var signatures = [];
       if (symbol.typehint === "SymbolInfo") {
-        hint += symbol.name;
+        hint += util.escapeHtml(symbol.name);
         hint += ": ";
-        hint += formatting.formatType(symbol.type);
+        hint += util.escapeHtml(formatting.formatType(symbol.type));
       }
 
       if (docUri.typehint === "StringResponse") {
