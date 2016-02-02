@@ -66,35 +66,48 @@ define(function(require, exports, module) {
   handler.tooltip = function(doc, ast, pos, options, callback) {
     console.info("Requesting tooltip for " + handler.path + ":" + JSON.stringify(pos));
 
-    var fileinfo = {
-      file: handler.workspaceDir + handler.path,
-      currentContents: true
-    };
-    var point = util.posToOffset(doc, pos);
-    var reqs = [{
+    executeEnsime({
       typehint: "SymbolAtPointReq",
-      file: fileinfo,
-      point: point
-    }, {
-      typehint: "DocUriAtPointReq",
-      file: fileinfo,
-      point: {
-        from: point,
-        to: point
+      file: {
+        file: handler.workspaceDir + handler.path,
+        currentContents: true
+      },
+      point: util.posToOffset(doc, pos)
+    }, function(err, symbol) {
+      if (err) {
+        console.warn("Error fetching tooltip (SymbolAtPointReq).");
+        return callback({});
       }
-    }];
-    executeEnsimes(reqs, function(err, results) {
-      if (err) return callback(err);
-      var symbol = results[0];
-      var docUri = results[1];
+      if (symbol.typehint !== "SymbolInfo") return callback(false, {});
 
       console.info(symbol)
-      console.info(docUri)
 
-      var hint = "";
+      var hint = util.escapeHtml(symbol.name);
+      hint += ": ";
+      hint += util.escapeHtml(formatting.formatType(symbol.type));
 
-      function done(err) {
-        if (err) return console.warn(err);
+      //TODO config plugindir and node
+      workerUtil.execFile("node", {
+        cwd: "/home/ubuntu/workspace",
+        args: [
+          "/home/ubuntu/.c9/plugins/c9.ide.language.scala/server/doc-fetcher.js",
+          JSON.stringify(symbol.declPos)
+        ]
+      }, function(err, result, stderr) {
+        if (err) {
+          console.warn("Error fetching tooltip (doc-fetcher): " + stderr);
+          return callback({});
+        }
+
+        if (result && result.length > 1) {
+          hint += '<div style="border-top: 1px solid grey; margin-top: 1em; padding-top: 0.5em; margin-bottom: 0.5em;">';
+          hint += workerUtil.filterDocumentation(result);
+          hint += "</div>";
+        }
+
+        //TODO maybe use preview for that...
+        // hint += `<a onclick="require('ext/preview/preview').preview('${url}'); return false;" href="${url}" target="c9doc" style="pointer-events: auto">(more)</a>`;
+
         callback({
           hint: hint,
           pos: {
@@ -104,39 +117,7 @@ define(function(require, exports, module) {
             ec: pos.column
           }
         });
-      }
-
-      if (symbol.typehint === "SymbolInfo") {
-        hint += util.escapeHtml(symbol.name);
-        hint += ": ";
-        hint += util.escapeHtml(formatting.formatType(symbol.type));
-      }
-
-      if (docUri.typehint === "StringResponse") {
-        var url = docUri.text;
-
-        //TODO config plugindir and node
-        workerUtil.execFile("node", {
-          cwd: "/home/ubuntu/workspace",
-          args: [
-            "/home/ubuntu/.c9/plugins/c9.ide.language.scala/server/doc-fetcher.js",
-            url,
-            38871
-          ]
-        }, function(err, result, stderr) {
-          if (err) return done(err);
-
-          if (hint !== "") hint += "<br>";
-          hint += "<h4>Documentation</h4>";
-          hint += result;
-          // hint += "<iframe>"+result+"</iframe>";
-          done();
-          // console.warn(stdout)
-          // hint += `<a onclick="require('ext/preview/preview').preview('${url}'); return false;" href="${url}" target="c9doc" style="pointer-events: auto">(more)</a>`;
-        });
-      }
-      else
-        done();
+      });
     });
   };
 });
