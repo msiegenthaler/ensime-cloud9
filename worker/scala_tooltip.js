@@ -5,12 +5,11 @@ define(function(require, exports, module) {
   var util = require("./util");
   var formatting = require("./formatting")
 
+  var pluginDir = "/home/ubuntu/.c9/plugins/c9.ide.language.scala";
+
   var handler = module.exports = Object.create(baseHandler);
   var emitter;
 
-  var markers = [];
-  var updatingMarkers = [];
-  var pending = [];
 
   handler.handlesLanguage = function(language) {
     return language === "scala";
@@ -20,6 +19,9 @@ define(function(require, exports, module) {
     emitter = handler.getEmitter();
     console.log("Scala tooltip initialized.");
 
+    emitter.on("set_config", function(config) {
+      pluginDir = config.plugin || pluginDir;
+    });
     if (!handler.workspaceDir) {
       handler.workspaceDir = "/home/ubuntu/workspace";
       console.warn("WorkspaceDir was undefined in the language handler - setting it to " + handler.workspaceDir);
@@ -80,17 +82,15 @@ define(function(require, exports, module) {
       }
       if (symbol.typehint !== "SymbolInfo") return callback(false, {});
 
-      console.info(symbol)
-
       var hint = util.escapeHtml(symbol.name);
       hint += ": ";
       hint += util.escapeHtml(formatting.formatType(symbol.type));
 
-      //TODO config plugindir and node
+      //TODO handle unsaved workspace files
       workerUtil.execFile("node", {
-        cwd: "/home/ubuntu/workspace",
+        cwd: handler.workspaceDir,
         args: [
-          "/home/ubuntu/.c9/plugins/c9.ide.language.scala/server/doc-fetcher.js",
+          pluginDir + "/server/doc-fetcher.js",
           JSON.stringify(symbol.declPos)
         ]
       }, function(err, result, stderr) {
@@ -104,9 +104,6 @@ define(function(require, exports, module) {
           hint += workerUtil.filterDocumentation(result);
           hint += "</div>";
         }
-
-        //TODO maybe use preview for that...
-        // hint += `<a onclick="require('ext/preview/preview').preview('${url}'); return false;" href="${url}" target="c9doc" style="pointer-events: auto">(more)</a>`;
 
         callback({
           hint: hint,
