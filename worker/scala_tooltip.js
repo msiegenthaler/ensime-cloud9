@@ -33,33 +33,6 @@ define(function(require, exports, module) {
     util.executeEnsime(emitter, req, callback);
   }
 
-  /** Do multiple concurrent ensime calls. */
-  function executeEnsimes(reqs, callback) {
-    var done = false;
-    var results = [];
-    var called = [];
-
-    function cb(index) {
-      return function(err, r) {
-        if (done || called[index]) return;
-        if (err) {
-          done = true;
-          return callback(err);
-        }
-        results[index] = r;
-        called[index] = true;
-        for (var i = 0; i < reqs.length; i++) {
-          if (!called[i]) return;
-        }
-        callback(false, results);
-      };
-    }
-    reqs.forEach(function(req, i) {
-      executeEnsime(req, cb(i));
-    });
-  }
-
-
   handler.getTooltipRegex = function() {
     //TODO
     return null;

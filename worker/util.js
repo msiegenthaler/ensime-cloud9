@@ -16,6 +16,32 @@ define(function(require, exports, module) {
     });
   }
 
+  /** Do multiple concurrent ensime calls. */
+  function executeEnsimes(emitter, reqs, callback) {
+    var done = false;
+    var results = [];
+    var called = [];
+
+    function cb(index) {
+      return function(err, r) {
+        if (done || called[index]) return;
+        if (err) {
+          done = true;
+          return callback(err);
+        }
+        results[index] = r;
+        called[index] = true;
+        for (var i = 0; i < reqs.length; i++) {
+          if (!called[i]) return;
+        }
+        callback(false, results);
+      };
+    }
+    reqs.forEach(function(req, i) {
+      executeEnsime(emitter, req, cb(i));
+    });
+  }
+
   function posToOffset(doc, pos) {
     return doc.getLines(0, pos.row - 1).reduce(function(sf, l) {
       return sf + l.length + 1;
@@ -33,6 +59,7 @@ define(function(require, exports, module) {
 
   module.exports = {
     executeEnsime: executeEnsime,
+    executeEnsimes: executeEnsimes,
     posToOffset: posToOffset,
     escapeHtml: escapeHtml
   };
