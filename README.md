@@ -11,6 +11,8 @@ Supported features
 - Show all compile errors and warnings in a special tab and allow to cycle though it.
 - Outline
 - Code formatter (using scalariform)
+- Show type under cursor in tooltip
+- Show documentation under curser
 
 
 Installation
