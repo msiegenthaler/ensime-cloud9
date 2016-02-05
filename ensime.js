@@ -382,12 +382,8 @@ define(function(require, exports, module) {
                 worker.once("code_format", function(e) {
                     var tab = tabManager.focussedTab;
                     if (tab) {
-                        tab.editor.ace.undo();
-                        tab.editor.ace.redo();
-                        var pos = tab.editor.ace.getCursorPosition();
                         tab.document.value = e.data;
                         tab.editor.ace.selection.clearSelection();
-                        tab.editor.scrollTo(pos);
                     }
                 });
             });
