@@ -293,24 +293,22 @@ define(function(require, exports, module) {
                 setupConnectorBridge(handler);
                 format.addFormatter("Scala (Scalariform)", "scala", plugin);
                 format.on("format", function(e) {
-                    //TODO does not yet work due to a bug in worker.codeFormat
-                    // language.getWorker(function(err, worker) {
-                    // if (err) return console.error("Could not get language worker");
-                    // worker.emit("code_format", {
-                    // data: {}
-                    // });
-                    // });
-                    handler.emit("format");
+                    language.getWorker(function(err, worker) {
+                        if (err) return console.error("Could not get language worker");
+                        worker.emit("code_format", {
+                            data: {}
+                        });
+                        worker.once("code_format", function(e) {
+                            var tab = tabManager.focussedTab;
+                            if (tab) {
+                                tab.document.value = e.data;
+                                tab.editor.ace.selection.clearSelection();
+                            }
+                        });
+                    });
                     return true;
                 });
-                //TODO workaround for error in worker.codeFormat
-                handler.on("code_format", function(e) {
-                    var tab = tabManager.findTab(e.path);
-                    if (tab) {
-                        tab.document.value = e.value;
-                        tab.editor.ace.selection.clearSelection();
-                    }
-                });
+
             });
             language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_tooltip", function(err, handler) {
                 if (err) return console.error(err);
