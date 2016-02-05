@@ -191,21 +191,22 @@ define(function(require, exports, module) {
 
             // Menus
             menus.setRootMenu("Scala", 550, plugin);
-            menus.addItemByPath("Scala/Next Error", new ui.item({
-                command: "jumpToMarker"
-            }), 100, plugin);
-            menus.addItemByPath("Scala/Errors and Warnings", new ui.item({
-                command: "showMarkers"
-            }), 110, plugin);
-            menus.addItemByPath("Scala/Format", new ui.item({
-                command: "formatcode"
-            }), 120, plugin);
-            menus.addItemByPath("Scala/Organise Imports", new ui.item({
-                command: "organiseImports"
-            }), 130, plugin);
             menus.addItemByPath("Scala/Jump to Definition", new ui.item({
                 command: "jumptodef"
-            }), 140, plugin);
+            }), 100, plugin);
+            menus.addItemByPath("Scala/Format", new ui.item({
+                command: "formatcode"
+            }), 110, plugin);
+            menus.addItemByPath("Scala/Organise Imports", new ui.item({
+                command: "organiseImports"
+            }), 120, plugin);
+            menus.addItemByPath("Scala/~", new ui.divider(), 199, plugin);
+            menus.addItemByPath("Scala/Next Error", new ui.item({
+                command: "jumpToMarker"
+            }), 200, plugin);
+            menus.addItemByPath("Scala/Errors and Warnings", new ui.item({
+                command: "showMarkers"
+            }), 210, plugin);
             menus.addItemByPath("Scala/~", new ui.divider(), 1000, plugin);
             menus.addItemByPath("Scala/Recompile All", new ui.item({
                 command: "recompile"
