@@ -3,7 +3,7 @@ define(function(require, exports, module) {
   var baseHandler = require("plugins/c9.ide.language/base_handler");
   var workerUtil = require("plugins/c9.ide.language/worker_util");
   var util = require("./util");
-  var formatting = require("./formatting")
+  var formatting = require("./formatting");
 
   var pluginDir = "/home/ubuntu/.c9/plugins/c9.ide.language.scala";
 

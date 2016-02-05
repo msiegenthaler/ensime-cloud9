@@ -12,7 +12,8 @@ Supported features
 - Outline
 - Code formatter (using scalariform)
 - Show type under cursor in tooltip
-- Show documentation under curser
+- Show documentation under cursor
+- Jump to definition
 
 
 Installation
