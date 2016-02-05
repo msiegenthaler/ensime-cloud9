@@ -3,6 +3,7 @@ define(function(require, exports, module) {
   var baseHandler = require("plugins/c9.ide.language/base_handler");
   var workerUtil = require("plugins/c9.ide.language/worker_util");
   var util = require("./util");
+  var path = require("path");
 
   var handler = module.exports = Object.create(baseHandler);
   var emitter;
@@ -58,7 +59,8 @@ define(function(require, exports, module) {
         }]);
       }
       else if (symbol.declPos.typehint === "OffsetSourcePosition") {
-        workerUtil.readFile(symbol.declPos.file, {
+        var file = path.relative(handler.workspaceDir, symbol.declPos.file);
+        workerUtil.readFile(file, {
           encoding: "utf-8",
           allowUnsaved: true
         }, function(err, contents) {
