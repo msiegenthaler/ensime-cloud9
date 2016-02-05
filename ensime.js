@@ -39,6 +39,7 @@ define(function(require, exports, module) {
         var plugin = new Plugin("Ensime", main.consumes);
         imports.ensime = plugin;
         var emit = plugin.getEmitter();
+        emit.setMaxListeners(20);
 
         /** Subplugins **/
         var MarkersEditor = require("./markers-editor")(imports, main.consumes);
@@ -316,6 +317,10 @@ define(function(require, exports, module) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
             });
+
+            save.on("afterSave", function(event) {
+                emit("afterSave", event.path);
+            });
         });
 
         plugin.on("unload", function() {
@@ -374,7 +379,7 @@ define(function(require, exports, module) {
             ensimeConnector.on("event", function(event) {
                 handler.emit("event", event);
             });
-            save.on("afterSave", function(event) {
+            plugin.on("afterSave", function(event) {
                 handler.emit("afterSave", event.path);
             });
             plugin.on("rebuild", function(event) {
