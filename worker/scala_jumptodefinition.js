@@ -26,25 +26,42 @@ define(function(require, exports, module) {
     util.executeEnsime(emitter, req, callback);
   }
 
-  handler.jumpToDefinition = function(doc, ast, pos, callback) {
-    console.info("Jump to definition for " + handler.path + ":" + JSON.stringify(pos));
+  handler.jumpToDefinition = function(doc, ast, pos, options, callback) {
+    console.info("Jump to definition for " + options.path + ":" + JSON.stringify(pos));
 
     executeEnsime({
       typehint: "SymbolAtPointReq",
       file: {
-        file: handler.workspaceDir + handler.path,
+        file: handler.workspaceDir + options.path,
         currentContents: true
       },
       point: util.posToOffset(doc, pos)
     }, function(err, symbol) {
       if (err) {
         console.warn("Error fetching jumping to definition (SymbolAtPointReq).");
-        return callback({});
+        return callback(err);
       }
       if (symbol.typehint !== "SymbolInfo") return callback(false, []);
 
-      console.warn("TODO: Jump to " + JSON.stringify(symbol.declPos))
-      callback([]);
+      console.warn(symbol)
+
+      var icon = "method" //TODO
+
+      if (symbol.declPos.typehint === "LineSourcePosition") {
+        callback(false, [{
+          path: symbol.declPos.file,
+          row: symbol.declPos.line,
+          column: 0,
+          icon: icon,
+          isGeneric: false
+        }]);
+      }
+      else if (symbol.declPos.typehint === "OffsetSourcePosition") {
+        console.warn("TODO convert offset " + symbol.declPos.offset + " to line/column")
+      }
+      else {
+        callback(false, []);
+      }
     });
   };
 });
