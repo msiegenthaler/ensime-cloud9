@@ -45,16 +45,11 @@ define(function(require, exports, module) {
       }
       if (symbol.typehint !== "SymbolInfo") return callback(false, []);
 
-      console.warn(symbol)
-
-      var icon = "method" //TODO
-
       if (symbol.declPos.typehint === "LineSourcePosition") {
         callback(false, [{
           path: symbol.declPos.file,
           row: symbol.declPos.line,
           column: 0,
-          icon: icon,
           isGeneric: false
         }]);
       }
@@ -76,7 +71,6 @@ define(function(require, exports, module) {
             path: symbol.declPos.file,
             row: line,
             column: column,
-            icon: icon,
             isGeneric: false
           }]);
         });
