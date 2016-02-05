@@ -182,6 +182,9 @@ define(function(require, exports, module) {
             menus.addItemByPath("Scala/Format", new ui.item({
                 command: "formatcode"
             }), 120, plugin);
+            menus.addItemByPath("Scala/Jump to Definition", new ui.item({
+                command: "jumptodef"
+            }), 130, plugin);
             menus.addItemByPath("Scala/~", new ui.divider(), 1000, plugin);
             menus.addItemByPath("Scala/Recompile All", new ui.item({
                 command: "recompile"
