@@ -16,13 +16,13 @@ if (declPos.typehint === "EmptySourcePosition")
 var contents = fs.readFileSync(declPos.file, "utf-8");
 
 var offset;
-if (declPos.typehint === "LineSourcePosition") {
+if (declPos && declPos.typehint === "LineSourcePosition") {
   offset = -1;
   for (var i = 1; i < declPos.line; i++) {
     offset = contents.indexOf('\n', offset + 1);
   }
 }
-else if (declPos.typehint === "OffsetSourcePosition") {
+else if (declPos && declPos.typehint === "OffsetSourcePosition") {
   offset = declPos.offset;
 }
 else {
