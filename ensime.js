@@ -292,23 +292,7 @@ define(function(require, exports, module) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
                 format.addFormatter("Scala (Scalariform)", "scala", plugin);
-                format.on("format", function(e) {
-                    language.getWorker(function(err, worker) {
-                        if (err) return console.error("Could not get language worker");
-                        worker.emit("code_format", {
-                            data: {}
-                        });
-                        worker.once("code_format", function(e) {
-                            var tab = tabManager.focussedTab;
-                            if (tab) {
-                                tab.document.value = e.data;
-                                tab.editor.ace.selection.clearSelection();
-                            }
-                        });
-                    });
-                    return true;
-                });
-
+                format.on("format", formatUsingLanguage);
             });
             language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_tooltip", function(err, handler) {
                 if (err) return console.error(err);
@@ -386,6 +370,24 @@ define(function(require, exports, module) {
             plugin.on("rebuild", function(event) {
                 handler.emit("rebuild", event);
             });
+        }
+
+        /** Uses the language to do the formatting.. this should be built in but isn't */
+        function formatUsingLanguage(e) {
+            language.getWorker(function(err, worker) {
+                if (err) return console.error("Could not get language worker");
+                worker.emit("code_format", {
+                    data: {}
+                });
+                worker.once("code_format", function(e) {
+                    var tab = tabManager.focussedTab;
+                    if (tab) {
+                        tab.document.value = e.data;
+                        tab.editor.ace.selection.clearSelection();
+                    }
+                });
+            });
+            return true;
         }
 
         /***** Register and define API *****/
