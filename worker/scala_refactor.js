@@ -6,6 +6,7 @@ define(function(require, exports, module) {
   var handler = module.exports = Object.create(baseHandler);
   var emitter;
 
+  var refactorId = 0;
 
   handler.handlesLanguage = function(language) {
     return language === "scala";
@@ -15,7 +16,11 @@ define(function(require, exports, module) {
     emitter = handler.getEmitter();
     console.log("Scala refactor initialized.");
 
-    emitter.on("organiseImports", organiseImports);
+    emitter.on("organiseImports", function(path) {
+      organiseImports(path, function(err) {
+        if (err) return console.error(err);
+      });
+    });
 
     if (!handler.workspaceDir) {
       handler.workspaceDir = "/home/ubuntu/workspace";
@@ -37,7 +42,35 @@ define(function(require, exports, module) {
     });
   };
 
-  function organiseImports(path) {
+  /** Organize the imports, file must have been saved first. */
+  function organiseImports(path, callback) {
     console.info("Will organise the imports for " + path);
+
+    var id = refactorId++;
+    executeEnsime({
+      typehint: "PrepareRefactorReq",
+      procId: id,
+      tpe: "ignored",
+      params: {
+        typehint: "OrganiseImportsRefactorDesc",
+        file: handler.workspaceDir + path
+      },
+      interactive: false
+    }, function(err, result) {
+      if (err) return callback("Error organising imports: " + err);
+
+      executeEnsime({
+          typehint: "ExecRefactorReq",
+          procId: id,
+          tpe: {
+            typehint: "OrganizeImports"
+          }
+        },
+        function(err, res) {
+          if (err) return callback("Error organising imports: " + err);
+          console.info("Organised imports of " + path);
+          callback(false, {});
+        });
+    });
   }
 });
