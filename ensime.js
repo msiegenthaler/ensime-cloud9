@@ -184,7 +184,7 @@ define(function(require, exports, module) {
                         tabManager.focussedTab.editor.ace.getOptions().mode == "ace/mode/scala";
                 },
                 exec: function() {
-                    emit("organiseImports", tabManager.focussedTab.path);
+                    emit("organiseImports");
                 }
             }, plugin);
 
@@ -326,8 +326,12 @@ define(function(require, exports, module) {
             language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_refactor", function(err, handler) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
-                plugin.on("organiseImports", function(path) {
-                    handler.emit("organiseImports", path);
+                plugin.on("organiseImports", function() {
+                    save.save(tabManager.focussedTab, {}, function(err) {
+                        console.log("saved..")
+                        if (err) return console.error("Could not save the file.");
+                        handler.emit("organiseImports", tabManager.focussedTab.path);
+                    });
                 });
             });
 
