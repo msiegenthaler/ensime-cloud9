@@ -38,7 +38,7 @@ define(function(require, exports, module) {
     }, function(err, result) {
       if (err) {
         workerUtil.showError("Could not format the code");
-        return callback(err);
+        return callback(new Error(err));
       }
       callback(false, result.text);
     });
