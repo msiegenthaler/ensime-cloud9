@@ -1,6 +1,7 @@
 define(function(require, exports, module) {
 
   var baseHandler = require("plugins/c9.ide.language/base_handler");
+  var workerUtil = require("plugins/c9.ide.language/worker_util");
   var util = require("./util");
 
   var handler = module.exports = Object.create(baseHandler);
@@ -57,7 +58,26 @@ define(function(require, exports, module) {
         }]);
       }
       else if (symbol.declPos.typehint === "OffsetSourcePosition") {
-        console.warn("TODO convert offset " + symbol.declPos.offset + " to line/column")
+        workerUtil.readFile(symbol.declPos.file, {
+          encoding: "utf-8",
+          allowUnsaved: true
+        }, function(err, contents) {
+          if (err) {
+            console.warn("Failed to read " + symbol.declPos.file);
+            return callback(err);
+          }
+
+          var before = contents.substring(0, symbol.declPos.offset);
+          var line = (before.match(/\n/g) || []).length;
+          var column = Math.max(0, before.length - before.lastIndexOf('\n') - 1);
+          callback(false, [{
+            path: symbol.declPos.file,
+            row: line,
+            column: column,
+            icon: icon,
+            isGeneric: false
+          }]);
+        });
       }
       else {
         callback(false, []);
