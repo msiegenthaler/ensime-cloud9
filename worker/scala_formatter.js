@@ -14,17 +14,6 @@ define(function(require, exports, module) {
   handler.init = function(callback) {
     emitter = handler.getEmitter();
 
-    //TODO Temporary, until the bug in worker.codeFormat is fixed.
-    emitter.on("format", function(editor) {
-      handler.codeFormat(handler.doc, function(err, value) {
-        if (err) return console.error("Formatting failed: " + err);
-        emitter.emit("code_format", {
-          path: handler.path,
-          value: value
-        });
-      });
-    });
-
     if (!handler.workspaceDir) {
       handler.workspaceDir = "/home/ubuntu/workspace";
       console.warn("WorkspaceDir was undefined in the language handler - setting it to " + handler.workspaceDir);
@@ -44,12 +33,12 @@ define(function(require, exports, module) {
       typehint: "FormatOneSourceReq",
       file: {
         file: handler.workspaceDir + handler.path,
-        currentContents: true
+        contents: doc.getValue()
       }
     }, function(err, result) {
       if (err) {
         workerUtil.showError("Could not format the code");
-        return callback(err);
+        return callback(new Error(err));
       }
       callback(false, result.text);
     });
