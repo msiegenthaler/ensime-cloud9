@@ -169,6 +169,24 @@ define(function(require, exports, module) {
                     }, plugin);
                 }
             }, plugin);
+            commands.addCommand({
+                name: "organiseImports",
+                group: "Scala",
+                description: "Organise the imports in the current file.",
+                bindKey: {
+                    mac: "Cmd-Shift-O",
+                    win: "Ctrl-Shift-O",
+                    linux: "Ctrl-Shift-O"
+                },
+                isAvailable: function() {
+                    return ensimeReady &&
+                        tabManager.focussedTab.editor.ace &&
+                        tabManager.focussedTab.editor.ace.getOptions().mode == "ace/mode/scala";
+                },
+                exec: function() {
+                    emit("organiseImports");
+                }
+            }, plugin);
 
 
             // Menus
@@ -182,9 +200,12 @@ define(function(require, exports, module) {
             menus.addItemByPath("Scala/Format", new ui.item({
                 command: "formatcode"
             }), 120, plugin);
+            menus.addItemByPath("Scala/Organise Imports", new ui.item({
+                command: "organiseImports"
+            }), 130, plugin);
             menus.addItemByPath("Scala/Jump to Definition", new ui.item({
                 command: "jumptodef"
-            }), 130, plugin);
+            }), 140, plugin);
             menus.addItemByPath("Scala/~", new ui.divider(), 1000, plugin);
             menus.addItemByPath("Scala/Recompile All", new ui.item({
                 command: "recompile"
@@ -302,6 +323,16 @@ define(function(require, exports, module) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
             });
+            language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_refactor", function(err, handler) {
+                if (err) return console.error(err);
+                setupConnectorBridge(handler);
+                plugin.on("organiseImports", function() {
+                    save.save(tabManager.focussedTab, {}, function(err) {
+                        if (err) return console.error("Could not save the file.");
+                        handler.emit("organiseImports", tabManager.focussedTab.path);
+                    });
+                });
+            });
 
             save.on("afterSave", function(event) {
                 emit("afterSave", event.path);
@@ -312,6 +343,7 @@ define(function(require, exports, module) {
             ensimeConnector = null;
             ensimeRunning = false;
             ensimeReady = false;
+            language.unregisterLanguageHandler("plugins/c9.ide.language.scala/worker/scala_refactor");
             language.unregisterLanguageHandler("plugins/c9.ide.language.scala/worker/scala_jumptodefinition");
             language.unregisterLanguageHandler("plugins/c9.ide.language.scala/worker/scala_tooltip");
             language.unregisterLanguageHandler("plugins/c9.ide.language.scala/worker/scala_formatter");
