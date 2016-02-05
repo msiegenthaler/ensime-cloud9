@@ -312,12 +312,17 @@ define(function(require, exports, module) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
             });
+            language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_jumptodefinition", function(err, handler) {
+                if (err) return console.error(err);
+                setupConnectorBridge(handler);
+            });
         });
 
         plugin.on("unload", function() {
             ensimeConnector = null;
             ensimeRunning = false;
             ensimeReady = false;
+            language.unregisterLanguageHandler("plugins/c9.ide.language.scala/worker/scala_jumptodefinition");
             language.unregisterLanguageHandler("plugins/c9.ide.language.scala/worker/scala_tooltip");
             language.unregisterLanguageHandler("plugins/c9.ide.language.scala/worker/scala_formatter");
             language.unregisterLanguageHandler("plugins/c9.ide.language.scala/worker/scala_completer");
