@@ -33,7 +33,7 @@ define(function(require, exports, module) {
       typehint: "FormatOneSourceReq",
       file: {
         file: handler.workspaceDir + handler.path,
-        currentContents: true
+        contents: doc.getValue()
       }
     }, function(err, result) {
       if (err) {
