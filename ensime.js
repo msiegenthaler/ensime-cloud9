@@ -169,6 +169,24 @@ define(function(require, exports, module) {
                     }, plugin);
                 }
             }, plugin);
+            commands.addCommand({
+                name: "organiseImports",
+                group: "Scala",
+                description: "Organise the imports in the current file.",
+                bindKey: {
+                    mac: "Cmd-Shift-O",
+                    win: "Ctrl-Shift-O",
+                    linux: "Ctrl-Shift-O"
+                },
+                isAvailable: function() {
+                    return ensimeReady &&
+                        tabManager.focussedTab.editor.ace &&
+                        tabManager.focussedTab.editor.ace.getOptions().mode == "ace/mode/scala";
+                },
+                exec: function() {
+                    emit("organiseImports", tabManager.focussedTab.path);
+                }
+            }, plugin);
 
 
             // Menus
@@ -182,9 +200,12 @@ define(function(require, exports, module) {
             menus.addItemByPath("Scala/Format", new ui.item({
                 command: "formatcode"
             }), 120, plugin);
+            menus.addItemByPath("Scala/Organise Imports", new ui.item({
+                command: "organiseImports"
+            }), 130, plugin);
             menus.addItemByPath("Scala/Jump to Definition", new ui.item({
                 command: "jumptodef"
-            }), 130, plugin);
+            }), 140, plugin);
             menus.addItemByPath("Scala/~", new ui.divider(), 1000, plugin);
             menus.addItemByPath("Scala/Recompile All", new ui.item({
                 command: "recompile"
@@ -305,6 +326,9 @@ define(function(require, exports, module) {
             language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_refactor", function(err, handler) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
+                plugin.on("organiseImports", function(path) {
+                    handler.emit("organiseImports", path);
+                });
             });
 
             save.on("afterSave", function(event) {

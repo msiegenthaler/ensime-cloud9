@@ -15,6 +15,8 @@ define(function(require, exports, module) {
     emitter = handler.getEmitter();
     console.log("Scala refactor initialized.");
 
+    emitter.on("organiseImports", organiseImports);
+
     if (!handler.workspaceDir) {
       handler.workspaceDir = "/home/ubuntu/workspace";
       console.warn("WorkspaceDir was undefined in the language handler - setting it to " + handler.workspaceDir);
@@ -30,8 +32,12 @@ define(function(require, exports, module) {
     console.info("Requesting refactorings for " + options.path + ":" + JSON.stringify(pos));
 
     callback(false, {
-      refactoring: ["rename", "organizeImports"],
+      refactoring: ["rename", "organiseImports"],
       isGeneric: false
     });
   };
+
+  function organiseImports(path) {
+    console.info("Will organise the imports for " + path);
+  }
 });
