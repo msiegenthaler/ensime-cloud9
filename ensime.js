@@ -39,6 +39,7 @@ define(function(require, exports, module) {
         var plugin = new Plugin("Ensime", main.consumes);
         imports.ensime = plugin;
         var emit = plugin.getEmitter();
+        emit.setMaxListeners(20);
 
         /** Subplugins **/
         var MarkersEditor = require("./markers-editor")(imports, main.consumes);
@@ -181,6 +182,9 @@ define(function(require, exports, module) {
             menus.addItemByPath("Scala/Format", new ui.item({
                 command: "formatcode"
             }), 120, plugin);
+            menus.addItemByPath("Scala/Jump to Definition", new ui.item({
+                command: "jumptodef"
+            }), 130, plugin);
             menus.addItemByPath("Scala/~", new ui.divider(), 1000, plugin);
             menus.addItemByPath("Scala/Recompile All", new ui.item({
                 command: "recompile"
@@ -312,12 +316,21 @@ define(function(require, exports, module) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
             });
+            language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_jumptodefinition", function(err, handler) {
+                if (err) return console.error(err);
+                setupConnectorBridge(handler);
+            });
+
+            save.on("afterSave", function(event) {
+                emit("afterSave", event.path);
+            });
         });
 
         plugin.on("unload", function() {
             ensimeConnector = null;
             ensimeRunning = false;
             ensimeReady = false;
+            language.unregisterLanguageHandler("plugins/c9.ide.language.scala/worker/scala_jumptodefinition");
             language.unregisterLanguageHandler("plugins/c9.ide.language.scala/worker/scala_tooltip");
             language.unregisterLanguageHandler("plugins/c9.ide.language.scala/worker/scala_formatter");
             language.unregisterLanguageHandler("plugins/c9.ide.language.scala/worker/scala_completer");
@@ -369,7 +382,7 @@ define(function(require, exports, module) {
             ensimeConnector.on("event", function(event) {
                 handler.emit("event", event);
             });
-            save.on("afterSave", function(event) {
+            plugin.on("afterSave", function(event) {
                 handler.emit("afterSave", event.path);
             });
             plugin.on("rebuild", function(event) {
