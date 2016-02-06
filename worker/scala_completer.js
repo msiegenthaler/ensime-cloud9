@@ -35,15 +35,15 @@ define(function(require, exports, module) {
       reload: true
     }, function(err, result) {
       if (err) return callback(err);
-
-      var completions = result.completions.map(function(r) {
+      var completions = result.completions.map(function(r, i) {
         return {
           id: r.typeId,
           name: r.name,
           replaceText: r.name,
           icon: r.isCallable ? "method" : "property",
           meta: r.typeSig.result,
-          priority: r.relevance,
+          priority: r.relevance * 1000 + i,
+          noDoc: true,
           isContextual: true,
           guessTooltip: false
         };
