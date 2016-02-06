@@ -50,10 +50,6 @@ define(function(require, exports, module) {
       }
       if (symbol.typehint !== "SymbolInfo") return callback(false, {});
 
-      var hint = util.escapeHtml(symbol.name);
-      hint += ": ";
-      hint += util.escapeHtml(formatting.formatType(symbol.type));
-
       //TODO handle unsaved workspace files
       workerUtil.execFile("node", {
         cwd: handler.workspaceDir,
@@ -67,14 +63,44 @@ define(function(require, exports, module) {
           return callback({});
         }
 
+        var hint = util.escapeHtml(symbol.name);
+        hint += ": ";
+        hint += util.escapeHtml(formatting.formatType(symbol.type));
         if (result && result.length > 1) {
           hint += '<div style="border-top: 1px solid grey; margin-top: 1em; padding-top: 0.5em; margin-bottom: 0.5em;">';
           hint += workerUtil.filterDocumentation(result);
           hint += "</div>";
         }
 
+        console.warn(symbol.type)
+
+        var signature = {
+          name: symbol.name,
+          parameters: [],
+          doc: hint,
+          docHtml: hint
+        };
+
+        if (symbol.type.typehint === "ArrowTypeInfo") {
+          signature.returnType = formatting.formatType(symbol.type.resultType);
+          symbol.type.paramSections.forEach(function(section) {
+            section.params.forEach(function(param) {
+              signature.parameters.push({
+                name: param[0],
+                type: formatting.formatType(param[1]),
+                active: true
+              });
+            });
+          });
+        }
+        else if (symbol.type.typehint === "ArrowTypeInfo") {}
+
+
+
         callback({
-          hint: hint,
+          hint: {
+            signatures: [signature]
+          },
           pos: {
             sl: pos.row,
             sc: pos.column,
