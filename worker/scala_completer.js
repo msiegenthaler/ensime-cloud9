@@ -39,6 +39,13 @@ define(function(require, exports, module) {
       if (err) return callback(err);
       var completions = result.completions.map(function(r, i) {
         var doc = formatting.formatCompletionsSignature(r.name, r.isCallable, r.typeSig);
+        var action = {};
+        if (result.isCallable && r.typeSig.result.indexOf(".") != -1) {
+          action.addImport = r.typeSig.result;
+        }
+
+        console.warn(result)
+
         return {
           id: r.typeId,
           name: r.name,
@@ -48,6 +55,7 @@ define(function(require, exports, module) {
           priority: r.relevance * 1000 + i,
           docHead: r.name,
           doc: doc,
+          action: action,
           isContextual: true,
           guessTooltip: false
         };

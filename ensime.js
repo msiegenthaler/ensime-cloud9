@@ -2,7 +2,8 @@ define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "language", "ui", "commands", "menus", "preferences",
         "settings", "notification.bubble", "installer", "save",
-        "Editor", "editors", "tabManager", "Datagrid", "format"
+        "Editor", "editors", "tabManager", "Datagrid", "format",
+        "language.complete"
     ];
     main.provides = ["ensime"];
     return main;
@@ -21,6 +22,7 @@ define(function(require, exports, module) {
         var editors = imports.editors;
         var tabManager = imports.tabManager;
         var format = imports.format;
+        var complete = imports["language.complete"];
 
 
         /***** Initialization *****/
@@ -338,6 +340,10 @@ define(function(require, exports, module) {
             save.on("afterSave", function(event) {
                 emit("afterSave", event.path);
             });
+            complete.on("replaceText", function(e) {
+                console.warn("ReplaceText")
+                console.warn(e)
+            })
         });
 
         plugin.on("unload", function() {
