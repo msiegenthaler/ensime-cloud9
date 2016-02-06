@@ -2,6 +2,7 @@ define(function(require, exports, module) {
 
   var baseHandler = require("plugins/c9.ide.language/base_handler");
   var workerUtil = require("plugins/c9.ide.language/worker_util");
+  var formatting = require("./formatting");
   var util = require("./util");
 
   var handler = module.exports = Object.create(baseHandler);
@@ -36,6 +37,7 @@ define(function(require, exports, module) {
     }, function(err, result) {
       if (err) return callback(err);
       var completions = result.completions.map(function(r, i) {
+        var doc = formatting.formatCompletionsSignature(r.name, r.isCallable, r.typeSig);
         return {
           id: r.typeId,
           name: r.name,
@@ -43,7 +45,8 @@ define(function(require, exports, module) {
           icon: r.isCallable ? "event" : "property",
           meta: r.typeSig.result,
           priority: r.relevance * 1000 + i,
-          noDoc: true,
+          docHead: r.name,
+          doc: doc,
           isContextual: true,
           guessTooltip: false
         };

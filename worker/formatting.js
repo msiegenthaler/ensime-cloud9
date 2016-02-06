@@ -4,44 +4,37 @@ define(function(require, exports, module) {
   var formatCompletionsSignature, formatImplicitInfo, formatParam, formatParamSection, formatParamSections, formatType, functionMatcher, scalaPackageMatcher,
     slice = [].slice;
 
-  formatCompletionsSignature = function(paramLists) {
-    var formatParamLists;
-    formatParamLists = function(paramLists) {
-      var formatParamList, formattedParamLists, i, paramList;
-      i = 0;
-      formatParamList = function(paramList) {
-        var formatParam, p, param;
-        formatParam = function(param) {
-          i = i + 1;
-          return "${" + i + ":" + param[0] + ": " + param[1] + "}";
-        };
-        p = (function() {
-          var j, len, results;
-          results = [];
-          for (j = 0, len = paramList.length; j < len; j++) {
-            param = paramList[j];
-            results.push(formatParam(param));
-          }
-          return results;
-        })();
-        return "(" + p.join(", ") + ")";
-      };
-      formattedParamLists = (function() {
-        var j, len, results;
-        results = [];
-        for (j = 0, len = paramLists.length; j < len; j++) {
-          paramList = paramLists[j];
-          results.push(formatParamList(paramList));
-        }
-        return results;
-      })();
-      return formattedParamLists.join("");
-    };
-    if (paramLists) {
-      return formatParamLists(paramLists);
+  formatCompletionsSignature = function(name, callable, typeSig) {
+    if (callable) {
+      if (typeSig.sections && typeSig.sections.length > 0) {
+        var params = formatParamLists(typeSig.sections);
+        return name + params + " ⇒ " + typeSig.result;
+      }
+      else {
+        return name + ": " + typeSig.result;
+      }
     }
     else {
-      return "";
+      return typeSig.result;
+    }
+
+    function formatParamLists(paramLists) {
+      function formatParamList(paramList) {
+        var results = [];
+        for (var j = 0, len = paramList.length; j < len; j++) {
+          var param = paramList[j];
+          var formatted = param[0] + ": " + param[1];
+          results.push(formatted);
+        }
+        return "(" + results.join(", ") + ")";
+      }
+
+      var results = [];
+      for (var j = 0, len = paramLists.length; j < len; j++) {
+        var paramList = paramLists[j];
+        results.push(formatParamList(paramList));
+      }
+      return results.join("");
     }
   };
 
