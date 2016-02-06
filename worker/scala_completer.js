@@ -41,7 +41,14 @@ define(function(require, exports, module) {
       var names = new Map();
       var completions = result.completions.map(function(r, i) {
         var doc = formatting.formatCompletionsSignature(r.name, r.isCallable, r.typeSig);
+
+        var action = {};
+        if (!r.isCallable && r.typeSig.result && r.typeSig.result.indexOf(".") != -1) {
+          action.addImport = r.typeSig.result;
+        }
+
         var obj = {
+          id: r.typeId,
           name: r.name,
           replaceText: r.name,
           icon: r.isCallable ? "event" : "property",
@@ -49,6 +56,7 @@ define(function(require, exports, module) {
           priority: r.relevance * 1000 - i,
           docHead: r.name,
           doc: doc,
+          action: action,
           isContextual: true,
           guessTooltip: false
         };
