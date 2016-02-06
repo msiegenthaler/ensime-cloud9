@@ -1,6 +1,7 @@
 define(function(require, exports, module) {
 
   var baseHandler = require("plugins/c9.ide.language/base_handler");
+  var workerUtil = require("plugins/c9.ide.language/worker_util");
   var util = require("./util");
 
   var handler = module.exports = Object.create(baseHandler);
@@ -20,8 +21,8 @@ define(function(require, exports, module) {
     util.executeEnsime(emitter, req, callback);
   }
 
-
   handler.complete = function(doc, ast, pos, options, callback) {
+    console.info("Completion requested for " + handler.path);
     executeEnsime({
       typehint: "CompletionsReq",
       fileInfo: {
@@ -49,5 +50,11 @@ define(function(require, exports, module) {
       });
       callback(completions);
     });
+  };
+
+  handler.predictNextCompletion = function(doc, ast, pos, options, callback) {
+    //Trigger an update since our previous results should be refreshed from the server
+    // -> higher quality, but more work for the server
+    workerUtil.completeUpdate(pos, doc.getLine(pos.row));
   };
 });
