@@ -1,6 +1,8 @@
 define(function(require, exports, module) {
 
   var baseHandler = require("plugins/c9.ide.language/base_handler");
+  var workerUtil = require("plugins/c9.ide.language/worker_util");
+  var formatting = require("./formatting");
   var util = require("./util");
 
   var handler = module.exports = Object.create(baseHandler);
@@ -20,8 +22,8 @@ define(function(require, exports, module) {
     util.executeEnsime(emitter, req, callback);
   }
 
-
   handler.complete = function(doc, ast, pos, options, callback) {
+    console.info("Completion requested for " + handler.path);
     executeEnsime({
       typehint: "CompletionsReq",
       fileInfo: {
@@ -34,20 +36,28 @@ define(function(require, exports, module) {
       reload: true
     }, function(err, result) {
       if (err) return callback(err);
-
-      var completions = result.completions.map(function(r) {
+      var completions = result.completions.map(function(r, i) {
+        var doc = formatting.formatCompletionsSignature(r.name, r.isCallable, r.typeSig);
         return {
           id: r.typeId,
           name: r.name,
           replaceText: r.name,
-          icon: r.isCallable ? "method" : "property",
+          icon: r.isCallable ? "event" : "property",
           meta: r.typeSig.result,
-          priority: r.relevance,
+          priority: r.relevance * 1000 + i,
+          docHead: r.name,
+          doc: doc,
           isContextual: true,
           guessTooltip: false
         };
       });
       callback(completions);
     });
+  };
+
+  handler.predictNextCompletion = function(doc, ast, pos, options, callback) {
+    //Trigger an update since our previous results should be refreshed from the server
+    // -> higher quality, but more work for the server
+    workerUtil.completeUpdate(pos, doc.getLine(pos.row));
   };
 });
