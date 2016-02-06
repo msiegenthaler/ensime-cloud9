@@ -40,7 +40,7 @@ define(function(require, exports, module) {
           id: r.typeId,
           name: r.name,
           replaceText: r.name,
-          icon: r.isCallable ? "method" : "property",
+          icon: r.isCallable ? "event" : "property",
           meta: r.typeSig.result,
           priority: r.relevance * 1000 + i,
           noDoc: true,
