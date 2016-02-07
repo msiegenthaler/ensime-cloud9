@@ -36,11 +36,14 @@ define(function(require, exports, module) {
       reload: true
     }, function(err, result) {
       if (err) return callback(err);
+
+      console.warn(result)
+
       var completions = result.completions.map(function(r, i) {
         var doc = formatting.formatCompletionsSignature(r.name, r.isCallable, r.typeSig);
         return {
           id: r.typeId,
-          name: r.name,
+          name: r.name + " (" + r.typeSig.result + ")",
           replaceText: r.name,
           icon: r.isCallable ? "event" : "property",
           meta: r.typeSig.result,
