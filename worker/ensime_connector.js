@@ -174,43 +174,34 @@ define(function(require, exports, module) {
       emitter.emit("call.result", result);
     }
 
-    if (noExecAnalysis && request.request.fileInfo && request.request.fileInfo.currentContents) {
-      delete request.request.fileInfo.currentContents;
-      workerUtil.readFile(request.request.fileInfo.file, {
-        encoding: "utf-8",
-        allowUnsaved: true
-      }, function(err, contents) {
-        if (err) return handler(err);
-        request.request.fileInfo.contents = contents;
-        //TODO - we probably need to escape unicode sequences like the arrow #5
-        call(JSON.stringify(request.request));
-      });
-    }
-    else call(JSON.stringify(request.request));
+    if (!noExecAnalysis &&
+      request.request.fileInfo &&
+      request.request.fileInfo.currentContents) {
+      // Optimize by not sending all the contents to the server
 
-    function call(data) {
-      if (request.request.fileInfo && request.request.fileInfo.currentContents) {
-        workerUtil.execAnalysis(node, {
-          args: [
-            pluginDir + "/server/ensime-caller.js",
-            ensimePort,
-            data
-          ],
-          mode: "stdin",
-          json: false,
-          semaphore: request.id,
-          maxCallInterval: 1
-        }, handler);
-      }
-      else {
-        workerUtil.execFile("node", {
-          args: [
-            pluginDir + "/server/ensime-caller.js",
-            ensimePort,
-            data
-          ],
-        }, handler);
-      }
+      delete request.request.fileInfo.contents;
+      workerUtil.execAnalysis(node, {
+        args: [
+          pluginDir + "/server/ensime-caller.js",
+          ensimePort,
+          JSON.stringify(request.request)
+        ],
+        mode: "stdin",
+        json: false,
+        semaphore: request.id,
+        maxCallInterval: 1
+      }, handler);
+    }
+    else {
+      if (request.request.fileInfo && request.request.fileInfo.currentContents)
+        delete request.request.fileInfo.currentContents;
+      workerUtil.execFile("node", {
+        args: [
+          pluginDir + "/server/ensime-caller.js",
+          ensimePort,
+          JSON.stringify(request.request)
+        ],
+      }, handler);
     }
   }
 });
