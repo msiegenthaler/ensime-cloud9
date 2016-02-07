@@ -37,21 +37,46 @@ define(function(require, exports, module) {
       reload: true
     }, function(err, result) {
       if (err) return callback(err);
+
+      var names = new Map();
       var completions = result.completions.map(function(r, i) {
         var doc = formatting.formatCompletionsSignature(r.name, r.isCallable, r.typeSig);
-        return {
-          id: r.typeId,
+        var obj = {
           name: r.name,
           replaceText: r.name,
           icon: r.isCallable ? "event" : "property",
           meta: r.typeSig.result,
-          priority: r.relevance * 1000 + i,
+          priority: r.relevance * 1000 - i,
           docHead: r.name,
           doc: doc,
           isContextual: true,
           guessTooltip: false
         };
+        names.set(obj.name, (names.get(obj.name) || []).concat(obj));
+        return obj;
       });
+
+      //Make the names unique, else they get collapsed by c9
+      names.forEach(function(es, n) {
+        var tps = new Map();
+        if (es.length > 1) {
+          es.forEach(function(obj, i) {
+            var suffix;
+            if (!tps.has(obj.meta)) {
+              suffix = obj.meta;
+              tps.set(obj.meta, 1);
+            }
+            else {
+              var index = tps.get(obj.meta) + 1;
+              suffix = obj.meta + " - " + index.toString();
+              tps.set(obj.meta, index);
+            }
+            obj.meta = undefined; //no additional information, so leave it out
+            obj.name += ` (${suffix})`;
+          });
+        }
+      });
+
       callback(completions);
     });
   };
