@@ -49,7 +49,7 @@ define(function(require, exports, module) {
           replaceText: r.name,
           icon: r.isCallable ? "event" : "property",
           meta: r.typeSig.result,
-          priority: r.relevance * 1000 + i,
+          priority: r.relevance * 1000 - i,
           docHead: r.name,
           doc: doc,
           isContextual: true,
