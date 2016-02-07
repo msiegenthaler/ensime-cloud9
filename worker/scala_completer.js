@@ -38,8 +38,6 @@ define(function(require, exports, module) {
     }, function(err, result) {
       if (err) return callback(err);
 
-      console.warn(result)
-
       var names = {};
       var completions = result.completions.map(function(r, i) {
         var doc = formatting.formatCompletionsSignature(r.name, r.isCallable, r.typeSig);
@@ -78,7 +76,6 @@ define(function(require, exports, module) {
           });
         }
       }
-      console.warn(names);
 
       callback(completions);
     });
