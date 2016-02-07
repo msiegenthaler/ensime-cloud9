@@ -38,11 +38,10 @@ define(function(require, exports, module) {
     }, function(err, result) {
       if (err) return callback(err);
 
-      var names = {};
+      var names = new Map();
       var completions = result.completions.map(function(r, i) {
         var doc = formatting.formatCompletionsSignature(r.name, r.isCallable, r.typeSig);
         var obj = {
-          id: r.typeId,
           name: r.name,
           replaceText: r.name,
           icon: r.isCallable ? "event" : "property",
@@ -53,29 +52,30 @@ define(function(require, exports, module) {
           isContextual: true,
           guessTooltip: false
         };
-        names[obj.name] = (names[obj.name] || []).concat(obj);
+        names.set(obj.name, (names.get(obj.name) || []).concat(obj));
         return obj;
       });
 
       //Make the names unique, else they get collapsed by c9
-      for (var n in names) {
-        var tps = {};
-        if (names[n].length > 1) {
-          names[n].forEach(function(obj, i) {
+      names.forEach(function(es, n) {
+        var tps = new Map();
+        if (es.length > 1) {
+          es.forEach(function(obj, i) {
             var suffix;
-            if (!tps[obj.meta]) {
+            if (!tps.has(obj.meta)) {
               suffix = obj.meta;
-              tps[obj.meta] = 1;
+              tps.set(obj.meta, 1);
             }
             else {
-              suffix = obj.meta + " - " + (tps[obj.meta] + 1);
-              tps[obj.meta]++;
+              var index = tps.get(obj.meta) + 1;
+              suffix = obj.meta + " - " + index.toString();
+              tps.set(obj.meta, index);
             }
             obj.meta = undefined; //no additional information, so leave it out
             obj.name += ` (${suffix})`;
           });
         }
-      }
+      });
 
       callback(completions);
     });
