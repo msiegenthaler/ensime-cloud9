@@ -40,11 +40,12 @@ define(function(require, exports, module) {
 
       console.warn(result)
 
+      var names = {};
       var completions = result.completions.map(function(r, i) {
         var doc = formatting.formatCompletionsSignature(r.name, r.isCallable, r.typeSig);
-        return {
+        var obj = {
           id: r.typeId,
-          name: r.name + " (" + r.typeSig.result + ")",
+          name: r.name,
           replaceText: r.name,
           icon: r.isCallable ? "event" : "property",
           meta: r.typeSig.result,
@@ -54,7 +55,31 @@ define(function(require, exports, module) {
           isContextual: true,
           guessTooltip: false
         };
+        names[obj.name] = (names[obj.name] || []).concat(obj);
+        return obj;
       });
+
+      //Make the names unique, else they get collapsed by c9
+      for (var n in names) {
+        var tps = {};
+        if (names[n].length > 1) {
+          names[n].forEach(function(obj, i) {
+            var suffix;
+            if (!tps[obj.meta]) {
+              suffix = obj.meta;
+              tps[obj.meta] = 1;
+            }
+            else {
+              suffix = obj.meta + " - " + (tps[obj.meta] + 1);
+              tps[obj.meta]++;
+            }
+            obj.meta = undefined; //no additional information, so leave it out
+            obj.name += ` (${suffix})`;
+          });
+        }
+      }
+      console.warn(names);
+
       callback(completions);
     });
   };
