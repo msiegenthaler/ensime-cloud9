@@ -70,7 +70,7 @@ define(function(require, exports, module) {
       },
       interactive: false
     }, function(err, result) {
-      if (err) return callback("Error organising imports: " + err);
+      if (err) return callback(err);
 
       executeEnsime({
           typehint: "ExecRefactorReq",
@@ -80,7 +80,7 @@ define(function(require, exports, module) {
           }
         },
         function(err, res) {
-          if (err) return callback("Error organising imports: " + err);
+          if (err) return callback(err);
           console.info("Organised imports of " + path);
           callback(false, {});
         });
@@ -89,7 +89,35 @@ define(function(require, exports, module) {
 
   /** Add an import. The file must have been saved first. */
   function addImport(path, importToAdd, callback) {
-    console.warn("addImport " + path + "  " + importToAdd);
-    callback();
+    console.info(`Will add import ${importToAdd} for ${path}`);
+
+    var id = refactorId++;
+    executeEnsime({
+      typehint: "PrepareRefactorReq",
+      procId: id,
+      tpe: "ignored",
+      params: {
+        typehint: "AddImportRefactorDesc",
+        file: handler.workspaceDir + path,
+        qualifiedName: importToAdd
+      },
+      interactive: false
+    }, function(err, result) {
+      if (err) return callback(err);
+
+      executeEnsime({
+          typehint: "ExecRefactorReq",
+          procId: id,
+          tpe: {
+            typehint: "AddImport"
+          }
+        },
+        function(err, res) {
+          if (err) return callback(err);
+          console.info(`Added import ${importToAdd} to ${path}`);
+
+          callback(false, {});
+        });
+    });
   }
 });
