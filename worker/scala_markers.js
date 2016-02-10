@@ -129,6 +129,7 @@ define(function(require, exports, module) {
       typehint: "TypecheckFileReq",
       fileInfo: {
         file: handler.workspaceDir + handler.path,
+        contents: doc,
         currentContents: true
       }
     }, function(err) {

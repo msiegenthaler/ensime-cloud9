@@ -25,6 +25,7 @@ define(function(require, exports, module) {
       typehint: "StructureViewReq",
       fileInfo: {
         file: handler.workspaceDir + handler.path,
+        contents: doc.getValue(),
         currentContents: true
       }
     }, function(err, result) {

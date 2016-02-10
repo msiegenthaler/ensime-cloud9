@@ -40,6 +40,7 @@ define(function(require, exports, module) {
       typehint: "SymbolAtPointReq",
       file: {
         file: handler.workspaceDir + handler.path,
+        contents: doc.getValue(),
         currentContents: true
       },
       point: util.posToOffset(doc, pos)
