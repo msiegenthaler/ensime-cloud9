@@ -46,8 +46,6 @@ define(function(require, exports, module) {
           action.addImport = r.typeSig.result;
         }
 
-        console.warn(result)
-
         var obj = {
           name: r.name,
           replaceText: r.name,
