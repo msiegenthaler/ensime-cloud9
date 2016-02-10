@@ -3,6 +3,7 @@ define(function(require, exports, module) {
   var baseHandler = require("plugins/c9.ide.language/base_handler");
   var workerUtil = require("plugins/c9.ide.language/worker_util");
   var util = require("./util");
+  var pathUtil = require("path");
 
   var handler = module.exports = Object.create(baseHandler);
   var emitter;
@@ -101,23 +102,37 @@ define(function(require, exports, module) {
         file: handler.workspaceDir + path,
         qualifiedName: importToAdd
       },
-      interactive: false
+      interactive: true
     }, function(err, result) {
       if (err) return callback(err);
 
-      executeEnsime({
-          typehint: "ExecRefactorReq",
-          procId: id,
-          tpe: {
-            typehint: "AddImport"
-          }
-        },
-        function(err, res) {
-          if (err) return callback(err);
-          console.info(`Added import ${importToAdd} to ${path}`);
+      console.warn(result)
 
-          callback(false, {});
-        });
+      if (result.typehint === "RefactorEffect") {
+        emitter.emit("updateEditor", result.changes.map(function(change) {
+          return {
+            path: "/" + pathUtil.relative(handler.workspaceDir, change.file),
+            from: change.from,
+            to: change.to,
+            text: change.text
+          };
+        }));
+        
+        //Cancel refactor request, we'll apply it ourselves
+        executeEnsime({
+            typehint: "ExecRefactorReq",
+            procId: id,
+            tpe: {
+              typehint: "AddImport"
+            }
+          },
+          function(err, res) {
+            if (err) return callback(err);
+            console.info(`Added import ${importToAdd} to ${path}`);
+
+            callback(false, {});
+          });
+      }
     });
   }
 });

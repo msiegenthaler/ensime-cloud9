@@ -329,6 +329,20 @@ define(function(require, exports, module) {
             language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_refactor", function(err, handler) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
+
+                handler.on("updateEditor", function(changes) {
+                    var tab = tabManager.focussedTab;
+                    changes.forEach(function(change) {
+                        if (tab.path === change.path) {
+                            var v = tab.document.value;
+                            var v2 = v.substring(0, change.from) + change.text + v.substr(change.to);
+                            tab.document.setBookmarkedValue(v2);
+                            console.warn(change)
+                        }
+                        else console.info(`ignoring change ${change.path} is not the active editor ${tab.path}`);
+                    });
+                });
+
                 plugin.on("organiseImports", function() {
                     save.save(tabManager.focussedTab, {}, function(err) {
                         if (err) return console.error("Could not save the file.");
