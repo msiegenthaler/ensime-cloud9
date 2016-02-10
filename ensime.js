@@ -335,15 +335,26 @@ define(function(require, exports, module) {
                         handler.emit("organiseImports", tabManager.focussedTab.path);
                     });
                 });
+
+                complete.on("replaceText", function(e) {
+                    console.warn("ReplaceText")
+                    if (e.match && e.match.action) {
+                        var action = e.match.action;
+                        //TODO save..a
+                        console.warn(action)
+                        if (action.addImport) {
+                            handler.emit("addImport", {
+                                path: tabManager.focussedTab.path,
+                                add: action.addImport
+                            });
+                        }
+                    }
+                });
             });
 
             save.on("afterSave", function(event) {
                 emit("afterSave", event.path);
             });
-            complete.on("replaceText", function(e) {
-                console.warn("ReplaceText")
-                console.warn(e)
-            })
         });
 
         plugin.on("unload", function() {

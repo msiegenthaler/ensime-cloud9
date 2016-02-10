@@ -1,6 +1,7 @@
 define(function(require, exports, module) {
 
   var baseHandler = require("plugins/c9.ide.language/base_handler");
+  var workerUtil = require("plugins/c9.ide.language/worker_util");
   var util = require("./util");
 
   var handler = module.exports = Object.create(baseHandler);
@@ -18,7 +19,19 @@ define(function(require, exports, module) {
 
     emitter.on("organiseImports", function(path) {
       organiseImports(path, function(err) {
-        if (err) return console.error(err);
+        if (err) {
+          workerUtil.showError("Problem while organising the imports");
+          return console.error(err);
+        }
+      });
+    });
+
+    emitter.on("addImport", function(e) {
+      addImport(e.path, e.add, function(err) {
+        if (err) {
+          workerUtil.showError("Problem while adding an import");
+          return console.error(err);
+        }
       });
     });
 
@@ -37,7 +50,7 @@ define(function(require, exports, module) {
     console.info("Requesting refactorings for " + options.path + ":" + JSON.stringify(pos));
 
     callback(false, {
-      refactoring: ["rename", "organiseImports"],
+      refactoring: ["rename", "organiseImports", "addImport"],
       isGeneric: false
     });
   };
@@ -72,5 +85,11 @@ define(function(require, exports, module) {
           callback(false, {});
         });
     });
+  }
+
+  /** Add an import. The file must have been saved first. */
+  function addImport(path, importToAdd, callback) {
+    console.warn("addImport " + path + "  " + importToAdd);
+    callback();
   }
 });
