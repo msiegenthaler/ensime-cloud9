@@ -337,17 +337,18 @@ define(function(require, exports, module) {
                 });
 
                 complete.on("replaceText", function(e) {
-                    console.warn("ReplaceText")
                     if (e.match && e.match.action) {
                         var action = e.match.action;
-                        //TODO save..a
-                        console.warn(action)
-                        if (action.addImport) {
-                            handler.emit("addImport", {
-                                path: tabManager.focussedTab.path,
-                                add: action.addImport
-                            });
-                        }
+                        save.save(tabManager.focussedTab, {}, function(err) {
+                            if (err) return console.error("Could not save the file.");
+
+                            if (action.addImport) {
+                                handler.emit("addImport", {
+                                    path: tabManager.focussedTab.path,
+                                    add: action.addImport
+                                });
+                            }
+                        });
                     }
                 });
             });
