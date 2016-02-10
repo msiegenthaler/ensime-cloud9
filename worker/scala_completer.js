@@ -42,7 +42,7 @@ define(function(require, exports, module) {
       var completions = result.completions.map(function(r, i) {
         var doc = formatting.formatCompletionsSignature(r.name, r.isCallable, r.typeSig);
         var action = {};
-        if (!result.isCallable && r.typeSig.result && r.typeSig.result.indexOf(".") != -1) {
+        if (!r.isCallable && r.typeSig.result && r.typeSig.result.indexOf(".") != -1) {
           action.addImport = r.typeSig.result;
         }
 
