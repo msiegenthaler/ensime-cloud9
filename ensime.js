@@ -453,10 +453,43 @@ define(function(require, exports, module) {
         function applyDiff(diff) {
             jsdiff.applyPatches(diff, {
                 loadFile: function(index, callback) {
-                    console.log("should load: " + index)
-                    callback("not implemented");
+                    var filename = index.oldFileName;
+                    if (!filename) return callback("no edits");
+
+                    var tab = tabManager.findTab(filename);
+                    if (tab) {
+                        //is open
+                        callback(false, tab.document.value);
+                    }
+                    else {
+                        //not open, load from the fs
+                        //TODO
+                        console.error("not yet implemented, should read file " + filename + " from the fs");
+                        callback("not implemented");
+                    }
                 },
                 patched: function(index, content) {
+                    var filename = index.oldFileName;
+                    if (!filename) return;
+
+                    if (index.newFileName !== index.oldFileName) {
+                        filename = index.newFileName;
+                        //TODO rename
+                        return console.error("Renaming not yet implemented");
+                    }
+
+                    console.warn("Updating " + filename)
+
+                    var tab = tabManager.findTab(filename);
+                    if (tab) {
+                        console.warn("new content " + content)
+                        tab.document.setBookmarkedValue(content);
+                    }
+                    else {
+                        //TODO write the content
+                        console.error("Not yet implemented: writing content of non-open file");
+                    }
+
                     console.warn(index + ":" + content)
                 }
             });
