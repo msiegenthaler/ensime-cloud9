@@ -475,24 +475,31 @@ define(function(require, exports, module) {
                     if (!filename) return;
 
                     if (index.newFileName !== index.oldFileName) {
+                        //rename
                         filename = index.newFileName;
-                        //TODO rename
-                        return console.error("Renaming not yet implemented");
+                        fs.rename(
+                            path.relative(c9.workspaceDir, index.oldFileName),
+                            path.relative(c9.workspaceDir, index.newFileName),
+                            function(err) {
+                                if (err) return console.error(`Failed to apply the diff: rename to ${index.newFileName} failed: ${err}`);
+                                updateContents();
+                            });
                     }
+                    else updateContents();
 
-                    console.warn("Updating " + filename)
-
-                    var tab = tabManager.findTab(filename);
-                    if (tab) {
-                        //open in a tab - update it
-                        tab.document.setBookmarkedValue(content);
-                    }
-                    else {
-                        //not open in a tab - update on the fs
-                        var relativeFile = path.relative(c9.workspaceDir, filename);
-                        fs.writeFile(relativeFile, content, "utf-8", function(err) {
-                            if (err) console.error(`Could not apply the diff to ${filename}: ${err}`);
-                        });
+                    function updateContents() {
+                        var tab = tabManager.findTab(filename);
+                        if (tab) {
+                            //open in a tab - update it
+                            tab.document.setBookmarkedValue(content);
+                        }
+                        else {
+                            //not open in a tab - update on the fs
+                            var relativeFile = path.relative(c9.workspaceDir, filename);
+                            fs.writeFile(relativeFile, content, "utf-8", function(err) {
+                                if (err) console.error(`Could not apply the diff to ${filename}: ${err}`);
+                            });
+                        }
                     }
                 }
             });
