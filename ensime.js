@@ -3,7 +3,7 @@ define(function(require, exports, module) {
         "Plugin", "language", "ui", "commands", "menus", "preferences",
         "settings", "notification.bubble", "installer", "save",
         "Editor", "editors", "tabManager", "Datagrid", "format",
-        "language.complete"
+        "language.complete", "fs", "c9"
     ];
     main.provides = ["ensime"];
     return main;
@@ -23,8 +23,11 @@ define(function(require, exports, module) {
         var tabManager = imports.tabManager;
         var format = imports.format;
         var complete = imports["language.complete"];
+        var fs = imports["fs"];
+        var c9 = imports["c9"];
 
         var jsdiff = require("./lib/diff.js");
+        var path = require("path");
 
         /***** Initialization *****/
 
@@ -463,9 +466,8 @@ define(function(require, exports, module) {
                     }
                     else {
                         //not open, load from the fs
-                        //TODO
-                        console.error("not yet implemented, should read file " + filename + " from the fs");
-                        callback("not implemented");
+                        var relativeFile = path.relative(c9.workspaceDir, filename);
+                        fs.readFile(relativeFile, "utf-8", callback);
                     }
                 },
                 patched: function(index, content) {
