@@ -3,8 +3,6 @@ define(function(require, exports, module) {
   var baseHandler = require("plugins/c9.ide.language/base_handler");
   var workerUtil = require("plugins/c9.ide.language/worker_util");
   var util = require("./util");
-  var pathUtil = require("path");
-  var jsdiff = require("../lib/diff.js");
 
   var handler = module.exports = Object.create(baseHandler);
   var emitter;
@@ -106,68 +104,18 @@ define(function(require, exports, module) {
     }, function(err, result) {
       if (err) return callback(err);
 
-      console.warn(result)
-
       if (result.typehint === "RefactorDiffEffect") {
         workerUtil.execFile("cat", {
           args: [result.diff],
           stdoutEncoding: "utf-8"
         }, function(err, diff) {
           if (err) return callback(err);
-
-          console.warn(diff)
-
-          workerUtil.readFile(path, {
-            encoding: "utf-8",
-            allowUnsaved: true
-          }, function(err, content) {
-            if (err) return callback(err);
-
-            console.warn(content)
-
-            console.warn(jsdiff.applyPatch(content, diff));
-
-            callback(false);
-
-          })
-
-
-
-
-
-          // emitter.emit("updateEditor", result.changes.map(function(change) {
-          //   return {
-          //     diff: diff
-          //   };
-          // }));
+          emitter.emit("updateEditor", {
+            diff: diff
+          });
         });
       }
+      else callback("Unsupported refactor effect: " + result.typehint);
     });
-
-    //   emitter.emit("updateEditor", result.changes.map(function(change) {
-    //     return {
-    //       path: "/" + pathUtil.relative(handler.workspaceDir, change.file),
-    //       from: change.from,
-    //       to: change.to,
-    //       text: change.text
-    //     };
-    //   }));
-
-    //   //Cancel refactor request, we'll apply it ourselves
-    //   executeEnsime({
-    //       typehint: "ExecRefactorReq",
-    //       procId: id,
-    //       tpe: {
-    //         typehint: "AddImport"
-    //       }
-    //     },
-    //     function(err, res) {
-    //       if (err) return callback(err);
-    //       console.info(`Added import ${importToAdd} to ${path}`);
-
-    //       callback(false, {});
-    //     });
-    // }
-    // });
   }
 });
