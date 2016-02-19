@@ -484,15 +484,16 @@ define(function(require, exports, module) {
 
                     var tab = tabManager.findTab(filename);
                     if (tab) {
-                        console.warn("new content " + content)
+                        //open in a tab - update it
                         tab.document.setBookmarkedValue(content);
                     }
                     else {
-                        //TODO write the content
-                        console.error("Not yet implemented: writing content of non-open file");
+                        //not open in a tab - update on the fs
+                        var relativeFile = path.relative(c9.workspaceDir, filename);
+                        fs.writeFile(relativeFile, content, "utf-8", function(err) {
+                            if (err) console.error(`Could not apply the diff to ${filename}: ${err}`);
+                        });
                     }
-
-                    console.warn(index + ":" + content)
                 }
             });
         }
