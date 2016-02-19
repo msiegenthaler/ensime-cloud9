@@ -331,17 +331,11 @@ define(function(require, exports, module) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
 
-                handler.on("updateEditor", function(changes) {
-                    var tab = tabManager.focussedTab;
-                    changes.forEach(function(change) {
-                        if (tab.path === change.path) {
-                            var v = tab.document.value;
-                            var v2 = v.substring(0, change.from) + change.text + v.substr(change.to);
-                            tab.document.setBookmarkedValue(v2);
-                            console.warn(change)
-                        }
-                        else console.info(`ignoring change ${change.path} is not the active editor ${tab.path}`);
-                    });
+                handler.on("updateEditor", function(change) {
+                    if (change.diff) {
+                        //Diff based change
+                        applyDiff(change.diff);
+                    }
                 });
 
                 plugin.on("organiseImports", function() {
