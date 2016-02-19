@@ -61,29 +61,28 @@ define(function(require, exports, module) {
 
     var id = refactorId++;
     executeEnsime({
-      typehint: "PrepareRefactorReq",
+      typehint: "RefactorReq",
       procId: id,
-      tpe: "ignored",
       params: {
         typehint: "OrganiseImportsRefactorDesc",
         file: handler.workspaceDir + path
       },
-      interactive: false
+      interactive: true
     }, function(err, result) {
       if (err) return callback(err);
 
-      executeEnsime({
-          typehint: "ExecRefactorReq",
-          procId: id,
-          tpe: {
-            typehint: "OrganizeImports"
-          }
-        },
-        function(err, res) {
+      if (result.typehint === "RefactorDiffEffect") {
+        workerUtil.execFile("cat", {
+          args: [result.diff],
+          stdoutEncoding: "utf-8"
+        }, function(err, diff) {
           if (err) return callback(err);
-          console.info("Organised imports of " + path);
-          callback(false, {});
+          emitter.emit("updateEditor", {
+            diff: diff
+          });
         });
+      }
+      else callback("Unsupported refactor effect: " + result.typehint);
     });
   }
 
