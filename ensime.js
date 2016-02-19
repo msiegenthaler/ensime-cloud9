@@ -24,6 +24,7 @@ define(function(require, exports, module) {
         var format = imports.format;
         var complete = imports["language.complete"];
 
+        var jsdiff = require("./lib/diff.js");
 
         /***** Initialization *****/
 
@@ -453,6 +454,18 @@ define(function(require, exports, module) {
                 });
             });
             return true;
+        }
+
+        function applyDiff(diff) {
+            jsdiff.applyPatches(diff, {
+                loadFile: function(index, callback) {
+                    console.log("should load: " + index)
+                    callback("not implemented");
+                },
+                patched: function(index, content) {
+                    console.warn(index + ":" + content)
+                }
+            });
         }
 
         /***** Register and define API *****/
