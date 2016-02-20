@@ -8,6 +8,7 @@ define(function(require, exports, module) {
   var emitter;
 
   var refactorId = 0;
+  var defaultImports = /^(scala\.[^.]*|scala\.collection\.immutable.(Map|Set|List|::|Nil)|java\.lang\.[^.]*)$/;
 
   handler.handlesLanguage = function(language) {
     return language === "scala";
@@ -96,8 +97,14 @@ define(function(require, exports, module) {
     }, callback);
   }
 
+
   /** Add an import. The file must have been saved first. */
   function addImport(path, importToAdd, callback) {
+    if (defaultImports.test(importToAdd)) {
+      console.info(`No need to add ${importToAdd}, it's a default import.`);
+      return callback(false);
+    }
+
     console.info(`Will add import ${importToAdd} for ${path}`);
 
     executeRefactoring({
