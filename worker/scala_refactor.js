@@ -46,6 +46,37 @@ define(function(require, exports, module) {
     util.executeEnsime(emitter, req, callback);
   }
 
+  function executeRefactoring(params, callback) {
+    var id = refactorId++;
+    executeEnsime({
+      typehint: "RefactorReq",
+      procId: id,
+      params: params,
+      interactive: true
+    }, function(err, result) {
+      if (err) return callback(err);
+
+      if (result.typehint === "RefactorDiffEffect")
+        applyDiff(result.diff, callback);
+      else if (result.typehint === "RefactorFailure")
+        callback("Error in refactoring: " + result.reason);
+      else
+        callback("Unsupported refactor effect: " + result.typehint);
+    });
+  }
+
+  function applyDiff(diffFile, callback) {
+    workerUtil.execFile("cat", {
+      args: [diffFile],
+      stdoutEncoding: "utf-8"
+    }, function(err, diff) {
+      if (err) return callback(err);
+      emitter.emit("updateEditor", {
+        diff: diff
+      });
+    });
+  }
+
   handler.getRefactorings = function(doc, ast, pos, options, callback) {
     console.info("Requesting refactorings for " + options.path + ":" + JSON.stringify(pos));
 
@@ -59,63 +90,20 @@ define(function(require, exports, module) {
   function organiseImports(path, callback) {
     console.info("Will organise the imports for " + path);
 
-    var id = refactorId++;
-    executeEnsime({
-      typehint: "RefactorReq",
-      procId: id,
-      params: {
-        typehint: "OrganiseImportsRefactorDesc",
-        file: handler.workspaceDir + path
-      },
-      interactive: true
-    }, function(err, result) {
-      if (err) return callback(err);
-
-      if (result.typehint === "RefactorDiffEffect")
-        applyDiff(result.diff, callback);
-      else if (result.typehint === "RefactorFailure")
-        callback("Error in refactoring");
-      else
-        callback("Unsupported refactor effect: " + result.typehint);
-    });
+    executeRefactoring({
+      typehint: "OrganiseImportsRefactorDesc",
+      file: handler.workspaceDir + path
+    }, callback);
   }
 
   /** Add an import. The file must have been saved first. */
   function addImport(path, importToAdd, callback) {
     console.info(`Will add import ${importToAdd} for ${path}`);
 
-    var id = refactorId++;
-    executeEnsime({
-      typehint: "RefactorReq",
-      procId: id,
-      params: {
-        typehint: "AddImportRefactorDesc",
-        file: handler.workspaceDir + path,
-        qualifiedName: importToAdd
-      },
-      interactive: true
-    }, function(err, result) {
-      if (err) return callback(err);
-
-      if (result.typehint === "RefactorDiffEffect")
-        applyDiff(result.diff, callback);
-      else if (result.typehint === "RefactorFailure")
-        callback("Error in refactoring: "+result.reason);
-      else
-        callback("Unsupported refactor effect: " + result.typehint);
-    });
-  }
-
-
-  function applyDiff(diffFile, callback) {
-    workerUtil.execFile("cat", {
-      args: [diffFile],
-      stdoutEncoding: "utf-8"
-    }, function(err, diff) {
-      if (err) return callback(err);
-      emitter.emit("updateEditor", {
-        diff: diff
-      });
-    });
+    executeRefactoring({
+      typehint: "AddImportRefactorDesc",
+      file: handler.workspaceDir + path,
+      qualifiedName: importToAdd
+    }, callback);
   }
 });
