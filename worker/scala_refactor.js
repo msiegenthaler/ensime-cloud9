@@ -107,10 +107,38 @@ define(function(require, exports, module) {
 
     console.info(`Will add import ${importToAdd} for ${path}`);
 
-    executeRefactoring({
-      typehint: "AddImportRefactorDesc",
-      file: handler.workspaceDir + path,
-      qualifiedName: importToAdd
-    }, callback);
+    workerUtil.readFile(path, {
+      encoding: "utf-8",
+      allowUnsaved: true
+    }, function(err, contents) {
+      if (err) return callback(err);
+
+      //check if already imported..
+      var exp = new RegExp("^\\s*import " + util.escapeRegExp(importToAdd) + "\s*$", "gm");
+      if (exp.test(contents)) {
+        console.info(`import ${importToAdd} already present, won't add it again.`);
+        return callback(false);
+      }
+      //or with {} syntax
+      var parts = /(.+)\.([^.]+)/.exec(importToAdd);
+      if (parts) {
+        var pkgMatcher = new RegExp("^\s*import " + util.escapeRegExp(parts[1]) + "\.\{(.*)\}\s*$", "gm");
+        var pkgs = pkgMatcher.exec(contents);
+        if (pkgs) {
+          for (var cand of pkgs[1].split(",")) {
+            if (/^\s*Source\s*$/.test(cand)) {
+              console.info(`import ${importToAdd} already present, won't add it again.`);
+              return callback(false);
+            }
+          }
+        }
+      }
+
+      executeRefactoring({
+        typehint: "AddImportRefactorDesc",
+        file: handler.workspaceDir + path,
+        qualifiedName: importToAdd
+      }, callback);
+    });
   }
 });

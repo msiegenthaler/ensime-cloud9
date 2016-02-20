@@ -57,10 +57,15 @@ define(function(require, exports, module) {
       .replace(/'/g, "&#039;");
   }
 
+  function escapeRegExp(value) {
+    return value.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&");
+  }
+
   module.exports = {
     executeEnsime: executeEnsime,
     executeEnsimes: executeEnsimes,
     posToOffset: posToOffset,
-    escapeHtml: escapeHtml
+    escapeHtml: escapeHtml,
+    escapeRegExp: escapeRegExp
   };
 });
