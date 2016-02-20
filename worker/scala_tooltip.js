@@ -33,6 +33,22 @@ define(function(require, exports, module) {
     util.executeEnsime(emitter, req, callback);
   }
 
+  function loadDocumentation(declPos, callback) {
+    //TODO handle unsaved workspace files
+    workerUtil.execFile("node", {
+      cwd: handler.workspaceDir,
+      args: [
+        pluginDir + "/server/doc-fetcher.js",
+        JSON.stringify(declPos)
+      ]
+    }, function(err, result, stderr) {
+      if (err) return callback(err);
+
+      var formatted = workerUtil.filterDocumentation(result);
+      callback(false, formatted);
+    });
+  }
+
   handler.tooltip = function(doc, ast, pos, options, callback) {
     console.info("Requesting tooltip for " + handler.path + ":" + JSON.stringify(pos));
 
@@ -55,22 +71,18 @@ define(function(require, exports, module) {
       hint += ": ";
       hint += util.escapeHtml(formatting.formatType(symbol.type));
 
-      //TODO handle unsaved workspace files
-      workerUtil.execFile("node", {
-        cwd: handler.workspaceDir,
-        args: [
-          pluginDir + "/server/doc-fetcher.js",
-          JSON.stringify(symbol.declPos)
-        ]
-      }, function(err, result, stderr) {
+      if (symbol.declPos) loadDocumentation(symbol.declPos, doCallback);
+      else doCallback(false);
+
+      function doCallback(err, documentation) {
         if (err) {
-          console.warn("Error fetching tooltip (doc-fetcher): " + stderr);
+          console.warn("Error fetching tooltip (doc-fetcher): " + err);
           return callback({});
         }
 
-        if (result && result.length > 1) {
+        if (documentation && documentation.length > 1) {
           hint += '<div style="border-top: 1px solid grey; margin-top: 1em; padding-top: 0.5em; margin-bottom: 0.5em;">';
-          hint += workerUtil.filterDocumentation(result);
+          hint += workerUtil.filterDocumentation(documentation);
           hint += "</div>";
         }
 
@@ -83,7 +95,7 @@ define(function(require, exports, module) {
             ec: pos.column
           }
         });
-      });
+      }
     });
   };
 });
