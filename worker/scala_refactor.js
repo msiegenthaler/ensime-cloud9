@@ -71,18 +71,12 @@ define(function(require, exports, module) {
     }, function(err, result) {
       if (err) return callback(err);
 
-      if (result.typehint === "RefactorDiffEffect") {
-        workerUtil.execFile("cat", {
-          args: [result.diff],
-          stdoutEncoding: "utf-8"
-        }, function(err, diff) {
-          if (err) return callback(err);
-          emitter.emit("updateEditor", {
-            diff: diff
-          });
-        });
-      }
-      else callback("Unsupported refactor effect: " + result.typehint);
+      if (result.typehint === "RefactorDiffEffect")
+        applyDiff(result.diff, callback);
+      else if (result.typehint === "RefactorFailure")
+        callback("Error in refactoring");
+      else
+        callback("Unsupported refactor effect: " + result.typehint);
     });
   }
 
@@ -103,18 +97,25 @@ define(function(require, exports, module) {
     }, function(err, result) {
       if (err) return callback(err);
 
-      if (result.typehint === "RefactorDiffEffect") {
-        workerUtil.execFile("cat", {
-          args: [result.diff],
-          stdoutEncoding: "utf-8"
-        }, function(err, diff) {
-          if (err) return callback(err);
-          emitter.emit("updateEditor", {
-            diff: diff
-          });
-        });
-      }
-      else callback("Unsupported refactor effect: " + result.typehint);
+      if (result.typehint === "RefactorDiffEffect")
+        applyDiff(result.diff, callback);
+      else if (result.typehint === "RefactorFailure")
+        callback("Error in refactoring: "+result.reason);
+      else
+        callback("Unsupported refactor effect: " + result.typehint);
+    });
+  }
+
+
+  function applyDiff(diffFile, callback) {
+    workerUtil.execFile("cat", {
+      args: [diffFile],
+      stdoutEncoding: "utf-8"
+    }, function(err, diff) {
+      if (err) return callback(err);
+      emitter.emit("updateEditor", {
+        diff: diff
+      });
     });
   }
 });
