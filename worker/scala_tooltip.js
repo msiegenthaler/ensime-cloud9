@@ -67,6 +67,12 @@ define(function(require, exports, module) {
       }
       if (symbol.typehint !== "SymbolInfo") return callback(false, {});
 
+      if (symbol.name && symbol.name.indexOf("<") == 0 &&
+        symbol.type && symbol.type.name === "<notype>") {
+        //no tooltip if we have no information to show
+        return callback(false, {});
+      }
+
       var hint = util.escapeHtml(symbol.name);
       hint += ": ";
       hint += util.escapeHtml(formatting.formatType(symbol.type));
