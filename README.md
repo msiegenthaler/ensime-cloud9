@@ -6,9 +6,9 @@ Provides advanced Scala language features based on *ensime*.
 
 Supported features
 ------------------
-- Code completions
+- Code completions including automatic add import for completed types
 - Show compile errors and warnings as markers in the editors
-- Show all compile errors and warnings in a special tab and allow to cycle though it.
+- Show all compile errors and warnings in a special tab and allow to cycle though it
 - Outline
 - Code formatter (using scalariform)
 - Show type under cursor in tooltip

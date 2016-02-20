@@ -2,7 +2,8 @@ define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "language", "ui", "commands", "menus", "preferences",
         "settings", "notification.bubble", "installer", "save",
-        "Editor", "editors", "tabManager", "Datagrid", "format"
+        "Editor", "editors", "tabManager", "Datagrid", "format",
+        "language.complete", "fs", "c9"
     ];
     main.provides = ["ensime"];
     return main;
@@ -21,7 +22,12 @@ define(function(require, exports, module) {
         var editors = imports.editors;
         var tabManager = imports.tabManager;
         var format = imports.format;
+        var complete = imports["language.complete"];
+        var fs = imports["fs"];
+        var c9 = imports["c9"];
 
+        var jsdiff = require("./lib/diff.js");
+        var path = require("path");
 
         /***** Initialization *****/
 
@@ -327,11 +333,35 @@ define(function(require, exports, module) {
             language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_refactor", function(err, handler) {
                 if (err) return console.error(err);
                 setupConnectorBridge(handler);
+
+                handler.on("updateEditor", function(change) {
+                    if (change.diff) {
+                        //Diff based change
+                        applyDiff(change.diff);
+                    }
+                });
+
                 plugin.on("organiseImports", function() {
                     save.save(tabManager.focussedTab, {}, function(err) {
                         if (err) return console.error("Could not save the file.");
                         handler.emit("organiseImports", tabManager.focussedTab.path);
                     });
+                });
+
+                complete.on("replaceText", function(e) {
+                    if (e.match && e.match.action) {
+                        var action = e.match.action;
+                        save.save(tabManager.focussedTab, {}, function(err) {
+                            if (err) return console.error("Could not save the file.");
+
+                            if (action.addImport) {
+                                handler.emit("addImport", {
+                                    path: tabManager.focussedTab.path,
+                                    add: action.addImport
+                                });
+                            }
+                        });
+                    }
                 });
             });
 
@@ -421,6 +451,58 @@ define(function(require, exports, module) {
                 });
             });
             return true;
+        }
+
+        function applyDiff(diff) {
+            jsdiff.applyPatches(diff, {
+                loadFile: function(index, callback) {
+                    var filename = index.oldFileName;
+                    if (!filename) return callback("no edits");
+
+                    var tab = tabManager.findTab(filename);
+                    if (tab) {
+                        //is open
+                        callback(false, tab.document.value);
+                    }
+                    else {
+                        //not open, load from the fs
+                        var relativeFile = path.relative(c9.workspaceDir, filename);
+                        fs.readFile(relativeFile, "utf-8", callback);
+                    }
+                },
+                patched: function(index, content) {
+                    var filename = index.oldFileName;
+                    if (!filename) return;
+
+                    if (index.newFileName !== index.oldFileName) {
+                        //rename
+                        filename = index.newFileName;
+                        fs.rename(
+                            path.relative(c9.workspaceDir, index.oldFileName),
+                            path.relative(c9.workspaceDir, index.newFileName),
+                            function(err) {
+                                if (err) return console.error(`Failed to apply the diff: rename to ${index.newFileName} failed: ${err}`);
+                                updateContents();
+                            });
+                    }
+                    else updateContents();
+
+                    function updateContents() {
+                        var tab = tabManager.findTab(filename);
+                        if (tab) {
+                            //open in a tab - update it
+                            tab.document.setBookmarkedValue(content);
+                        }
+                        else {
+                            //not open in a tab - update on the fs
+                            var relativeFile = path.relative(c9.workspaceDir, filename);
+                            fs.writeFile(relativeFile, content, "utf-8", function(err) {
+                                if (err) console.error(`Could not apply the diff to ${filename}: ${err}`);
+                            });
+                        }
+                    }
+                }
+            });
         }
 
         /***** Register and define API *****/
