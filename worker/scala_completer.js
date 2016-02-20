@@ -42,9 +42,14 @@ define(function(require, exports, module) {
       var completions = result.completions.map(function(r, i) {
         var doc = formatting.formatCompletionsSignature(r.name, r.isCallable, r.typeSig);
 
+        var type;
+        if (r.typeSig.result)
+          type = r.typeSig.result.replace(/\$$/, "");
+
         var action = {};
-        if (!r.isCallable && r.typeSig.result && r.typeSig.result.indexOf(".") != -1) {
-          action.addImport = r.typeSig.result;
+        if (!r.isCallable && type && type.indexOf(".") != -1) {
+          //auto add import
+          action.addImport = type;
         }
 
         var obj = {
@@ -52,8 +57,8 @@ define(function(require, exports, module) {
           name: r.name,
           replaceText: r.name,
           icon: r.isCallable ? "event" : "property",
-          meta: r.typeSig.result,
-          priority: r.relevance * 1000 - i,
+          meta: type,
+          priority: r.relevance * 100 - i,
           docHead: r.name,
           doc: doc,
           action: action,
@@ -72,15 +77,14 @@ define(function(require, exports, module) {
             var suffix;
             if (!tps.has(obj.meta)) {
               suffix = obj.meta;
-              tps.set(obj.meta, 1);
+              tps.set(obj.meta, true);
+              obj.meta = undefined; //no additional information, so leave it out
+              obj.name += ` (${suffix})`;
             }
             else {
-              var index = tps.get(obj.meta) + 1;
-              suffix = obj.meta + " - " + index.toString();
-              tps.set(obj.meta, index);
+              //it's really a duplicate, remove it
+              completions.splice(completions.indexOf(obj), 1);
             }
-            obj.meta = undefined; //no additional information, so leave it out
-            obj.name += ` (${suffix})`;
           });
         }
       });
