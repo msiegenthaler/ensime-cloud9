@@ -176,6 +176,21 @@ define(function(require, exports, module) {
                 }
             }, plugin);
             commands.addCommand({
+                name: "showEnsimeLog",
+                group: "Scala",
+                description: "Show the log of the ENSIME server.",
+                exec: function() {
+                    tabManager.open({
+                        editorType: "terminal",
+                        active: true,
+                    }, function(err, tab) {
+                        if (err) return console.error(err);
+                        var terminal = tab.editor;
+                        terminal.write(`tail -f ${c9.workspaceDir}/.ensime_cache/ensime.log\n`);
+                    });
+                }
+            }, plugin);
+            commands.addCommand({
                 name: "organiseImports",
                 group: "Scala",
                 description: "Organise the imports in the current file.",
@@ -227,12 +242,15 @@ define(function(require, exports, module) {
             menus.addItemByPath("Scala/Connection Info", new ui.item({
                 command: "ensimeConnectionInfo"
             }), 10551, plugin);
+            menus.addItemByPath("Scala/ENSIME Log", new ui.item({
+                command: "showEnsimeLog"
+            }), 10552, plugin);
             menus.addItemByPath("Scala/Stop ENSIME", new ui.item({
                 command: "stopEnsime"
-            }), 10552, plugin);
+            }), 10553, plugin);
             menus.addItemByPath("Scala/Update ENSIME", new ui.item({
                 command: "updateEnsime"
-            }), 10553, plugin);
+            }), 10554, plugin);
 
             settings.on("read", function(e) {
                 settings.setDefaults("project/ensime", [
