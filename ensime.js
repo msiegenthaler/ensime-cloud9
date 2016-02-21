@@ -3,7 +3,7 @@ define(function(require, exports, module) {
         "Plugin", "language", "ui", "commands", "menus", "preferences",
         "settings", "notification.bubble", "installer", "save",
         "Editor", "editors", "tabManager", "Datagrid", "format",
-        "language.complete", "fs", "c9"
+        "language.complete", "fs", "c9", "run"
     ];
     main.provides = ["ensime"];
     return main;
@@ -23,8 +23,9 @@ define(function(require, exports, module) {
         var tabManager = imports.tabManager;
         var format = imports.format;
         var complete = imports["language.complete"];
-        var fs = imports["fs"];
-        var c9 = imports["c9"];
+        var fs = imports.fs;
+        var c9 = imports.c9;
+        var run = imports.run;
 
         var jsdiff = require("./lib/diff.js");
         var path = require("path");
@@ -176,6 +177,12 @@ define(function(require, exports, module) {
                 }
             }, plugin);
             commands.addCommand({
+                name: "showEnsimeLog",
+                group: "Scala",
+                description: "Show the log of the ENSIME server.",
+                exec: showEnsimeLog
+            }, plugin);
+            commands.addCommand({
                 name: "organiseImports",
                 group: "Scala",
                 description: "Organise the imports in the current file.",
@@ -227,12 +234,15 @@ define(function(require, exports, module) {
             menus.addItemByPath("Scala/Connection Info", new ui.item({
                 command: "ensimeConnectionInfo"
             }), 10551, plugin);
+            menus.addItemByPath("Scala/ENSIME Log", new ui.item({
+                command: "showEnsimeLog"
+            }), 10552, plugin);
             menus.addItemByPath("Scala/Stop ENSIME", new ui.item({
                 command: "stopEnsime"
-            }), 10552, plugin);
+            }), 10553, plugin);
             menus.addItemByPath("Scala/Update ENSIME", new ui.item({
                 command: "updateEnsime"
-            }), 10553, plugin);
+            }), 10554, plugin);
 
             settings.on("read", function(e) {
                 settings.setDefaults("project/ensime", [
@@ -502,6 +512,32 @@ define(function(require, exports, module) {
                         }
                     }
                 }
+            });
+        }
+
+        function showEnsimeLog() {
+            var dotEnsime = settings.get("project/ensime/@ensimeFile");
+            var logfile = path.dirname(dotEnsime) + "/.ensime_cache/ensime.log";
+            run.run({
+                cmd: ["tail", "-f", logfile]
+
+            }, {
+                debug: false
+            }, "ensime_log", function(err) {
+                if (err) return console.error(err);
+
+                tabManager.open({
+                    editorType: "output",
+                    active: true,
+                    document: {
+                        title: "ENSIME Log",
+                        output: {
+                            id: "ensime_log"
+                        }
+                    }
+                }, function(err) {
+                    if (err) return console.error(err);
+                });
             });
         }
 
