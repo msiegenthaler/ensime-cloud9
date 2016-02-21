@@ -3,7 +3,7 @@ define(function(require, exports, module) {
         "Plugin", "language", "ui", "commands", "menus", "preferences",
         "settings", "notification.bubble", "installer", "save",
         "Editor", "editors", "tabManager", "Datagrid", "format",
-        "language.complete", "fs", "c9"
+        "language.complete", "fs", "c9", "run"
     ];
     main.provides = ["ensime"];
     return main;
@@ -23,8 +23,9 @@ define(function(require, exports, module) {
         var tabManager = imports.tabManager;
         var format = imports.format;
         var complete = imports["language.complete"];
-        var fs = imports["fs"];
-        var c9 = imports["c9"];
+        var fs = imports.fs;
+        var c9 = imports.c9;
+        var run = imports.run;
 
         var jsdiff = require("./lib/diff.js");
         var path = require("path");
@@ -179,16 +180,7 @@ define(function(require, exports, module) {
                 name: "showEnsimeLog",
                 group: "Scala",
                 description: "Show the log of the ENSIME server.",
-                exec: function() {
-                    tabManager.open({
-                        editorType: "terminal",
-                        active: true,
-                    }, function(err, tab) {
-                        if (err) return console.error(err);
-                        var terminal = tab.editor;
-                        terminal.write(`tail -f ${c9.workspaceDir}/.ensime_cache/ensime.log\n`);
-                    });
-                }
+                exec: showEnsimeLog
             }, plugin);
             commands.addCommand({
                 name: "organiseImports",
@@ -520,6 +512,32 @@ define(function(require, exports, module) {
                         }
                     }
                 }
+            });
+        }
+
+        function showEnsimeLog() {
+            var dotEnsime = settings.get("project/ensime/@ensimeFile");
+            var logfile = path.dirname(dotEnsime) + "/.ensime_cache/ensime.log";
+            run.run({
+                cmd: ["tail", "-f", logfile]
+
+            }, {
+                debug: false
+            }, "ensime_log", function(err) {
+                if (err) return console.error(err);
+
+                tabManager.open({
+                    editorType: "output",
+                    active: true,
+                    document: {
+                        title: "ENSIME Log",
+                        output: {
+                            id: "ensime_log"
+                        }
+                    }
+                }, function(err) {
+                    if (err) return console.error(err);
+                });
             });
         }
 
