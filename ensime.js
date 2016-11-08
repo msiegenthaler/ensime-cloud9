@@ -301,7 +301,7 @@ define(function(require, exports, module) {
                 ensimeConnector = handler;
 
                 function sendSettings(handler) {
-                    handler.emit("set_ensime_config", {
+                    handler.emit("set_config", {
                         ensimeFile: settings.get("project/ensime/@ensimeFile"),
                         sbt: settings.get("project/ensime/@sbt"),
                         node: settings.get("project/ensime/@node"),
@@ -341,6 +341,16 @@ define(function(require, exports, module) {
             });
             language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_tooltip", function(err, handler) {
                 if (err) return console.error(err);
+
+                function sendSettings(handler) {
+                    handler.emit("set_config", {
+                        node: settings.get("project/ensime/@node"),
+                        pluginDir: settings.get("project/ensime/@pluginDir")
+                    });
+                }
+                settings.on("project/ensime", sendSettings.bind(null, handler), plugin);
+                sendSettings(handler);
+
                 setupConnectorBridge(handler);
             });
             language.registerLanguageHandler("plugins/c9.ide.language.scala/worker/scala_jumptodefinition", function(err, handler) {

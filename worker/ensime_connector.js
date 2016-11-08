@@ -42,7 +42,7 @@ define(function(require, exports, module) {
     console.log("Initializing ensime-connector...");
     emitter = handler.getEmitter();
 
-    emitter.on("set_ensime_config", function(config) {
+    emitter.on("set_config", function(config) {
       dotEnsime = config.ensimeFile;
       sbt = config.sbt || sbt;
       node = config.node || node;
