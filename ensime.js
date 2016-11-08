@@ -247,6 +247,7 @@ define(function(require, exports, module) {
             settings.on("read", function(e) {
                 settings.setDefaults("project/ensime", [
                     ["ensimeFile", "/home/ubuntu/workspace/.ensime"],
+                    ["pluginDir", "/home/ubuntu/.c9/plugins/c9.ide.language.scala"],
                     ["sbt", "/usr/bin/sbt"],
                     ["noExecAnalysis", true],
                     ["node", "/home/ubuntu/.nvm/versions/node/v4.2.4/bin/node"]
@@ -264,15 +265,20 @@ define(function(require, exports, module) {
                             setting: "project/ensime/@ensimeFile",
                             position: 100
                         },
+                        "Plugin Directory": {
+                            type: "textbox",
+                            setting: "project/ensime/@pluginDir",
+                            position: 101
+                        },
                         "SBT Executable": {
                             type: "textbox",
                             setting: "project/ensime/@sbt",
-                            position: 101
+                            position: 102
                         },
                         "Node Executable": {
                             type: "textbox",
                             setting: "project/ensime/@node",
-                            position: 102
+                            position: 103
                         },
                         "Don't use execAnalysis": {
                             type: "checkbox",
@@ -299,7 +305,8 @@ define(function(require, exports, module) {
                         ensimeFile: settings.get("project/ensime/@ensimeFile"),
                         sbt: settings.get("project/ensime/@sbt"),
                         node: settings.get("project/ensime/@node"),
-                        noExecAnalysis: settings.get("project/ensime/@noExecAnalysis")
+                        noExecAnalysis: settings.get("project/ensime/@noExecAnalysis"),
+                        pluginDir: settings.get("project/ensime/@pluginDir")
                     });
                 }
                 settings.on("project/ensime", sendSettings.bind(null, handler), plugin);

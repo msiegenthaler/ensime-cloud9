@@ -46,7 +46,7 @@ define(function(require, exports, module) {
       dotEnsime = config.ensimeFile;
       sbt = config.sbt || sbt;
       node = config.node || node;
-      pluginDir = config.plugin || pluginDir;
+      pluginDir = config.pluginDir || pluginDir;
       node = config.node || node;
       noExecAnalysis = config.noExecAnalysis || noExecAnalysis;
     });
