@@ -48,6 +48,14 @@ define(function(require, exports, module) {
       pendingCalls = {};
     });
 
+    function utoa(str) {
+      return window.btoa(encodeURIComponent(str));
+    }
+
+    function atou(str) {
+      return decodeURIComponent(window.atob(str));
+    }
+
     function handleEvent(event) {
       if (event.type === "started") {
         console.log("ENSIME started.");
@@ -86,7 +94,7 @@ define(function(require, exports, module) {
           var delim = buffer.indexOf("|");
           if (delim == -1) return;
 
-          var decoded = window.atob(buffer.substr(0, delim));
+          var decoded = atou(buffer.substr(0, delim));
           buffer = buffer.substr(delim + 1);
           var event = JSON.parse(decoded);
           handleEvent(event);
@@ -161,7 +169,7 @@ define(function(require, exports, module) {
       if (!request) return callback("No request");
 
       request.callId = last_call_id++;
-      ensimeProcess.stdin.write(window.btoa(JSON.stringify(request)) + "|");
+      ensimeProcess.stdin.write(utoa(JSON.stringify(request)) + "|");
 
       pendingCalls[request.callId] = callback;
     }

@@ -35,9 +35,18 @@ process.stdin.setEncoding("ascii");
 
 ec.handleGeneral = function(msg) {
   var string = JSON.stringify(msg);
-  var buffer = new Buffer(string, "binary");
-  process.stdout.write(buffer.toString("base64") + "|");
+  process.stdout.write(utoa(string) + "|");
 };
+
+function utoa(str) {
+  var buffer = new Buffer(encodeURIComponent(str), "binary");
+  return buffer.toString("base64");
+}
+
+function atou(str) {
+  var buffer = new Buffer(str, "base64");
+  return decodeURIComponent(buffer.toString("binary"));
+}
 
 function start() {
   ec.connect(output, function(err, res) {
@@ -79,7 +88,7 @@ function receivedData(chunk) {
   var delim = buffer.indexOf("|");
   if (delim == -1) return;
 
-  var decoded = new Buffer(buffer.substr(0, delim), "base64").toString("ascii");
+  var decoded = atou(buffer.substr(0, delim));
   buffer = buffer.substr(delim + 1);
   var req = JSON.parse(decoded);
   handleRequest(req);
