@@ -25,14 +25,15 @@ define(function(require, exports, module) {
     var sbt;
     var ensimeFile;
     var pluginDir;
+    var ensimeVersion;
 
     //TODO maybe move the respective settings here completely? (including UI)
     function updateSettings() {
       ensimeFile = settings.get("project/ensime/@ensimeFile");
       sbt = settings.get("project/ensime/@sbt");
       node = settings.get("project/ensime/@node");
-      // noExecAnalysis = settings.get("project/ensime/@noExecAnalysis");
       pluginDir = settings.get("project/ensime/@pluginDir");
+      ensimeVersion = settings.get("project/ensime/@ensimeVersion");
     }
 
     plugin.on("load", function() {
@@ -45,6 +46,7 @@ define(function(require, exports, module) {
       ensimeFile = undefined;
       pluginDir = undefined;
       ensimeProcess = undefined;
+      ensimeVersion = undefined;
       pendingCalls = {};
     });
 
@@ -77,7 +79,7 @@ define(function(require, exports, module) {
       console.debug(`Running: ${node} ${pluginDir}/server/ensime-runner.js ${ensimeFile} ${sbt} ${attach}`);
       proc.spawn(node, {
         args: [pluginDir + "/server/ensime-runner.js",
-          ensimeFile, sbt,
+          ensimeFile, sbt, ensimeVersion,
           attach.toString()
         ],
         cwd: c9.workspaceDir
@@ -133,7 +135,7 @@ define(function(require, exports, module) {
       console.log("Will update ENSIME");
       proc.spawn(node, {
         args: [pluginDir + "/server/ensime-update.js",
-          ensimeFile, sbt
+          ensimeFile, sbt, ensimeVersion
         ],
         cwd: c9.workspaceDir
       }, function(err, process) {

@@ -248,7 +248,8 @@ define(function(require, exports, module) {
                     ["pluginDir", "/home/ubuntu/.c9/plugins/c9.ide.language.scala"],
                     ["sbt", "/usr/bin/sbt"],
                     ["noExecAnalysis", true],
-                    ["node", "/home/ubuntu/.nvm/versions/node/v4.2.4/bin/node"]
+                    ["node", "/home/ubuntu/.nvm/versions/node/v4.2.4/bin/node"],
+                    ["ensimeVersion", "1.0.0"]
                 ]);
             });
 
@@ -277,6 +278,11 @@ define(function(require, exports, module) {
                             type: "textbox",
                             setting: "project/ensime/@node",
                             position: 103
+                        },
+                        "ENSIME Version": {
+                            type: "textbox",
+                            setting: "project/ensime/@ensimeVersion",
+                            position: 104
                         },
                         "Don't use execAnalysis": {
                             type: "checkbox",

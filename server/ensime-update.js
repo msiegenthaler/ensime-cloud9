@@ -2,11 +2,12 @@ var Controller = require("ensime-controller-js");
 var fs = require("fs");
 var path = require("path");
 
-if (process.argv.length < 4) {
-  return console.error("Specify the .ensime file and the location of sbt as command line argument.");
+if (process.argv.length < 5) {
+  return console.error("Specify the .ensime file, the location of sbt and the ensime version as a command line argument.");
 }
 var dotEnsime = process.argv[2];
 var sbt = process.argv[3];
+var ensimeVersion = process.argv[4];
 
 var workspace = path.dirname(dotEnsime);
 var logfile = path.relative(workspace, ".ensime_cache/ensime.log");
@@ -22,7 +23,8 @@ console.log = console.info = console.debug = console.warn = function(message) {
 };
 
 var ec = new Controller(dotEnsime, "/tmp/ensime", {
-  sbt: sbt
+  sbt: sbt,
+  ensimeVersion: ensimeVersion
 });
 
 ec.handleGeneral = function(msg) {

@@ -24,7 +24,7 @@ Installation
 - Reload the workspace
 - Open "Installer..." from the Window menu and click though it. It will install java, sbt, ensime-sbt and some npm dependencies.
 - As soon as the 'sbt' command is available, the installation is complete.
-- execute "sbt gen-ensime" in your workspace. You must have an sbt-based project checked out before.
+- execute "sbt ensimeConfig" in your workspace. You must have an sbt-based project checked out before.
 - reload the workspace, ENSIME should now be installed and started. Check the browser console about the progress (should take about
   5 minutes).
 - Scala support is now ready.

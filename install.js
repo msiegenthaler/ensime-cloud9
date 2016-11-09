@@ -37,7 +37,7 @@ define(function(require, exports, module) {
     }, [{
       "bash": "mkdir -p ~/.sbt/0.13/plugins/"
     }, {
-      "bash": "echo 'addSbtPlugin(\"org.ensime\" % \"ensime-sbt\" % \"0.3.2\")' >> ~/.sbt/0.13/plugins/ensime.sbt"
+      "bash": "echo 'addSbtPlugin(\"org.ensime\" % \"sbt-ensime\" % \"1.11.1\")' > ~/.sbt/0.13/plugins/ensime.sbt"
     }]);
 
     session.install({
@@ -52,5 +52,5 @@ define(function(require, exports, module) {
   };
 
   // version of the installer. Increase this when installer changes and must run again
-  module.exports.version = 6;
+  module.exports.version = 7;
 });
