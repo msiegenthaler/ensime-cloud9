@@ -31,6 +31,7 @@ var ec = new Controller(dotEnsime, "/tmp/ensime", {
 });
 
 process.stdout.setEncoding("ascii");
+process.stdin.setEncoding("ascii");
 
 ec.handleGeneral = function(msg) {
   var string = JSON.stringify(msg);
@@ -38,32 +39,70 @@ ec.handleGeneral = function(msg) {
   process.stdout.write(buffer.toString("base64") + "|");
 };
 
-function connect() {
+function start() {
   ec.connect(output, function(err, res) {
     if (err) return console.error(err);
-    ec.handleGeneral({
-      type: "started",
-      port: res.ports.http
-    });
+    connected(res);
     console.info("========= ENSIME is now running ============\n");
   });
 }
 
-if (allowAttach) {
-  console.info("Checking for running instance...");
+function attach() {
   ec.attach(function(err, res) {
     if (err) {
       console.info("Attach failed, starting new instance.");
-      return connect(); // start if we cannot attach
+      return start(); // start if we cannot attach
     }
     console.info("Attach successful, gut a response: " + JSON.stringify(res));
-    ec.handleGeneral({
-      type: "started",
-      port: res.ports.http
-    });
+    connected(res);
     console.info("========= Attached to running ENSIME ============\n");
   });
 }
+
+function connected(res) {
+  process.stdin.on("error", function(err) {
+    console.error("Error reading from stdin: " + err);
+    process.exit(4);
+  });
+  process.stdin.on("data", receivedData);
+
+  ec.handleGeneral({
+    type: "started",
+    port: res.ports.http
+  });
+}
+
+var buffer = "";
+
+function receivedData(chunk) {
+  buffer += chunk;
+  var delim = buffer.indexOf("|");
+  if (delim == -1) return;
+
+  var decoded = new Buffer(buffer.substr(0, delim), "base64").toString("ascii");
+  buffer = buffer.substr(delim + 1);
+  var req = JSON.parse(decoded);
+  handleRequest(req);
+  receivedData("");
+}
+
+function handleRequest(req) {
+  ec.send(req, function(err, resp) {
+    var msg = {
+      type: "callResponse",
+      callId: req.callId
+    };
+    if (err) msg.error = err;
+    else msg.response = resp;
+    ec.handleGeneral(msg);
+  });
+}
+
+
+if (allowAttach) {
+  console.info("Checking for running instance...");
+  attach();
+}
 else {
-  connect();
+  start();
 }
